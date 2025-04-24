@@ -1,1 +1,272 @@
-placeholder
+{
+  "start": {
+    "text": "Neon City’s rain never stops. Detective Riley Voss nurses a whiskey in their office, the glow of a terminal casting shadows. The phone screams: NexCorp’s been gutted by a data breach. Customer data and trade secrets are bleeding onto the dark web. Time’s short. Where do you start?",
+    "image": "assets/panel1.jpg",
+    "choices": [
+      { "text": "Dig into NexCorp’s internal systems", "next": "prep_internal" },
+      { "text": "Investigate third-party vendor QuantumSync", "next": "prep_external" }
+    ]
+  },
+  "prep_internal": {
+    "text": "NexCorp’s HQ looms like a monolith. The CISO, Harper, is cagey, hiding something. You get access to their cybersecurity logs, but the clock’s ticking. What’s your move?",
+    "image": "assets/panel2.jpg",
+    "choices": [
+      { "text": "Demand full access to employee records", "next": "identify_internal_records" },
+      { "text": "Analyze server logs quietly", "next": "identify_internal_logs" }
+    ]
+  },
+  "prep_external": {
+    "text": "QuantumSync’s office is a neon-lit dump. Their CTO, Lena, swears they’re clean, but her eyes dart. You get a copy of their vendor logs. What do you do?",
+    "image": "assets/panel3.jpg",
+    "choices": [
+      { "text": "Push Lena for admin access", "next": "identify_external_access" },
+      { "text": "Trace their network traffic", "next": "identify_external_traffic" }
+    ]
+  },
+  "identify_internal_records": {
+    "text": "Harper’s furious about your demand but complies. Records show a sysadmin, Torres, had unusual activity. Confronting him risks tipping off the culprit. What now?",
+    "image": "assets/panel4.jpg",
+    "choices": [
+      { "text": "Confront Torres directly", "next": "contain_internal_confront" },
+      { "text": "Monitor Torres’ activity covertly", "next": "contain_internal_monitor" }
+    ]
+  },
+  "identify_internal_logs": {
+    "text": "The logs reveal a backdoor in NexCorp’s servers, active for weeks. It’s either malware or an insider. You need more data, but Harper’s watching you. What’s next?",
+    "image": "assets/panel5.jpg",
+    "choices": [
+      { "text": "Scan for malware", "next": "contain_internal_malware" },
+      { "text": "Cross-check with employee access", "next": "contain_internal_access" }
+    ]
+  },
+  "identify_external_access": {
+    "text": "Lena reluctantly grants admin access. You find a compromised API key linked to QuantumSync’s servers. It’s a lead, but Lena’s cooperation is shaky. What do you do?",
+    "image": "assets/panel6.jpg",
+    "choices": [
+      { "text": "Trace the API key’s usage", "next": "contain_external_trace" },
+      { "text": "Threaten Lena for more info", "next": "contain_external_threaten" }
+    ]
+  },
+  "identify_external_traffic": {
+    "text": "Network traffic shows a phishing attack hit QuantumSync’s servers. A trojan’s been siphoning data. The trail’s hot, but you’re out of time. What’s your move?",
+    "image": "assets/panel7.jpg",
+    "choices": [
+      { "text": "Trace the trojan’s source", "next": "contain_external_trace" },
+      { "text": "Warn NexCorp to cut QuantumSync’s access", "next": "contain_external_isolate" }
+    ]
+  },
+  "contain_internal_confront": {
+    "text": "Torres panics under pressure and bolts. You’ve lost him, and the breach is still active. Harper threatens to fire you. What do you do?",
+    "image": "assets/panel8.jpg",
+    "choices": [
+      { "text": "Chase Torres", "next": "fail_internal_lost" },
+      { "text": "Focus on locking down servers", "next": "eradicate_internal_lockdown" }
+    ]
+  },
+  "contain_internal_monitor": {
+    "text": "Monitoring Torres reveals he’s been accessing restricted servers. You isolate his account, containing the breach temporarily. What’s next?",
+    "image": "assets/panel9.jpg",
+    "choices": [
+      { "text": "Arrest Torres", "next": "eradicate_internal_arrest" },
+      { "text": "Trace his connections", "next": "eradicate_internal_connections" }
+    ]
+  },
+  "contain_internal_malware": {
+    "text": "A scan finds a rootkit, but it’s spreading faster than you can isolate. You need to act now, or the data’s gone for good. What’s your call?",
+    "image": "assets/panel10.jpg",
+    "choices": [
+      { "text": "Wipe infected servers", "next": "fail_internal_wipe" },
+      { "text": "Trace the rootkit’s origin", "next": "eradicate_internal_rootkit" }
+    ]
+  },
+  "contain_internal_access": {
+    "text": "Cross-checking reveals Torres used stolen credentials. You lock his access, but Harper’s trust is fraying. The breach is contained—for now. What’s next?",
+    "image": "assets/panel11.jpg",
+    "choices": [
+      { "text": "Investigate Torres’ motives", "next": "eradicate_internal_motives" },
+      { "text": "Secure the servers", "next": "recover_internal_secure" }
+    ]
+  },
+  "contain_external_trace": {
+    "text": "Tracing the trojan leads to a hacker group, ‘Nightshade.’ NexCorp cuts QuantumSync’s access, but Nightshade’s still active. What’s your move?",
+    "image": "assets/panel12.jpg",
+    "choices": [
+      { "text": "Infiltrate Nightshade’s servers", "next": "eradicate_external_nightshade" },
+      { "text": "Focus on NexCorp’s recovery", "next": "recover_external_help" }
+    ]
+  },
+  "contain_external_isolate": {
+    "text": "NexCorp severs QuantumSync’s access, stopping the leak. But you missed the trojan’s source, and the hackers are still out there. What now?",
+    "image": "assets/panel13.jpg",
+    "choices": [
+      { "text": "Hunt the hackers", "next": "fail_external_missed" },
+      { "text": "Secure NexCorp’s systems", "next": "recover_external_help" }
+    ]
+  },
+  "contain_external_threaten": {
+    "text": "Lena clams up, refusing to cooperate after your threats. QuantumSync’s systems are still leaking data. You’re on thin ice. What’s next?",
+    "image": "assets/panel14.jpg",
+    "choices": [
+      { "text": "Hack QuantumSync’s servers", "next": "eradicate_external_hack" },
+      { "text": "Beg Lena for help", "next": "fail_external_alienated" }
+    ]
+  },
+  "eradicate_internal_lockdown": {
+    "text": "You lock down the servers, but Torres is gone, and the hacker’s trail is cold. Harper’s faith in you is shot. What’s your next step?",
+    "image": "assets/panel15.jpg",
+    "choices": [
+      { "text": "Rebuild NexCorp’s defenses", "next": "recover_internal_secure" },
+      { "text": "Track Torres on your own", "next": "fail_internal_disgraced" }
+    ]
+  },
+  "eradicate_internal_arrest": {
+    "text": "Torres is arrested, but he claims he was blackmailed. The real hacker’s still out there. You’ve bought time, but not answers. What now?",
+    "image": "assets/panel16.jpg",
+    "choices": [
+      { "text": "Dig into the blackmailer", "next": "recover_internal_blackmailer" },
+      { "text": "Secure NexCorp’s systems", "next": "recover_internal_secure" }
+    ]
+  },
+  "eradicate_internal_connections": {
+    "text": "Torres was working with Nightshade. You shut down their local node, neutralizing the threat. NexCorp’s safe, but Harper’s skeptical. What’s next?",
+    "image": "assets/panel17.jpg",
+    "choices": [
+      { "text": "Secure NexCorp’s systems", "next": "recover_internal_secure" },
+      { "text": "Expose Nightshade publicly", "next": "lessons_internal_expose" }
+    ]
+  },
+  "eradicate_internal_rootkit": {
+    "text": "The rootkit came from a compromised update. You purge it, but NexCorp’s data is partially exposed. Harper’s livid. What’s your move?",
+    "image": "assets/panel18.jpg",
+    "choices": [
+      { "text": "Secure NexCorp’s systems", "next": "recover_internal_secure" },
+      { "text": "Audit the update vendor", "next": "lessons_internal_audit" }
+    ]
+  },
+  "eradicate_internal_motives": {
+    "text": "Torres was bribed by Nightshade. You track their operative and shut them down. The breach is stopped, but trust is thin. What now?",
+    "image": "assets/panel19.jpg",
+    "choices": [
+      { "text": "Secure NexCorp’s systems", "next": "recover_internal_secure" },
+      { "text": "Warn other companies", "next": "lessons_internal_warn" }
+    ]
+  },
+  "eradicate_external_nightshade": {
+    "text": "You infiltrate Nightshade’s servers and cripple their operation. The breach is stopped, but NexCorp’s reputation is bruised. What’s next?",
+    "image": "assets/panel20.jpg",
+    "choices": [
+      { "text": "Help NexCorp recover", "next": "recover_external_help" },
+      { "text": "Expose Nightshade", "next": "lessons_external_expose" }
+    ]
+  },
+  "eradicate_external_hack": {
+    "text": "Hacking QuantumSync’s servers stops the leak, but you’re caught by Lena. She threatens legal action, and NexCorp’s furious. What now?",
+    "image": "assets/panel21.jpg",
+    "choices": [
+      { "text": "Apologize and help NexCorp", "next": "recover_external_help" },
+      { "text": "Go rogue to find the hacker", "next": "fail_external_disgraced" }
+    ]
+  },
+  "recover_internal_blackmailer": {
+    "text": "You track the blackmailer, a Nightshade operative, and stop them. NexCorp’s systems are patched, but the damage is done. What’s your final move?",
+    "image": "assets/panel22.jpg",
+    "choices": [
+      { "text": "Compile a report", "next": "lessons_internal_report" },
+      { "text": "Expose the breach", "next": "lessons_internal_expose" }
+    ]
+  },
+  "recover_internal_secure": {
+    "text": "You patch NexCorp’s systems and reset credentials. The company’s limping, and Harper’s trust is gone. You’ve saved them, but at what cost?",
+    "image": "assets/panel23.jpg",
+    "choices": [
+      { "text": "Compile a report", "next": "lessons_internal_report" },
+      { "text": "Expose the breach", "next": "lessons_internal_expose" }
+    ]
+  },
+  "recover_external_help": {
+    "text": "You help NexCorp rebuild, but QuantumSync’s negligence has cost them dearly. The city’s watching. What’s your final play?",
+    "image": "assets/panel24.jpg",
+    "choices": [
+      { "text": "Compile a report", "next": "lessons_external_report" },
+      { "text": "Warn other companies", "next": "lessons_external_warn" }
+    ]
+  },
+  "lessons_internal_report": {
+    "text": "Your report fortifies NexCorp’s defenses. The city’s a cesspool, but you’ve kept the wolves at bay. Case closed.",
+    "image": "assets/panel25.jpg",
+    "choices": [],
+    "ending": "You saved NexCorp and caught the culprit. A rare win in Neon City."
+  },
+  "lessons_internal_expose": {
+    "text": "You expose the breach, and NexCorp’s stock plummets. The truth’s out, but you’re persona non grata. Case closed.",
+    "image": "assets/panel26.jpg",
+    "choices": [],
+    "ending": "You chose truth over loyalty. NexCorp’s hurting, but the city knows."
+  },
+  "lessons_internal_audit": {
+    "text": "Your audit plugs NexCorp’s vendor leaks. It’s a small victory in a city that chews up heroes. Case closed.",
+    "image": "assets/panel27.jpg",
+    "choices": [],
+    "ending": "You strengthened NexCorp’s weak links. A quiet win."
+  },
+  "lessons_internal_warn": {
+    "text": "You warn other companies, crippling Nightshade’s reach. NexCorp’s grateful, but the city’s still a jungle. Case closed.",
+    "image": "assets/panel28.jpg",
+    "choices": [],
+    "ending": "You protected more than NexCorp. A detective’s legacy."
+  },
+  "lessons_external_report": {
+    "text": "Your report rebuilds NexCorp’s trust. QuantumSync’s on notice, and you’ve earned your fee. Case closed.",
+    "image": "assets/panel29.jpg",
+    "choices": [],
+    "ending": "You stopped the breach and saved NexCorp. Well played, detective."
+  },
+  "lessons_external_expose": {
+    "text": "You expose Nightshade, and QuantumSync collapses. NexCorp survives, but your name’s mud. Case closed.",
+    "image": "assets/panel30.jpg",
+    "choices": [],
+    "ending": "You took down the hackers, but at a cost. Neon City doesn’t forgive."
+  },
+  "lessons_external_warn": {
+    "text": "You warn other companies, stopping Nightshade’s spree. NexCorp’s safe, and your rep’s intact. Case closed.",
+    "image": "assets/panel31.jpg",
+    "choices": [],
+    "ending": "You saved the city from Nightshade. A hero in the shadows."
+  },
+  "fail_internal_lost": {
+    "text": "Torres vanishes into Neon City’s underbelly. The breach spirals, and NexCorp’s data is gone. Harper fires you, and your name’s trash. Case closed.",
+    "image": "assets/panel32.jpg",
+    "choices": [],
+    "ending": "You lost the suspect and the case. Neon City eats its own."
+  },
+  "fail_internal_wipe": {
+    "text": "Wiping the servers stops the rootkit but destroys NexCorp’s data. The company collapses, and you’re out of a job. Case closed.",
+    "image": "assets/panel33.jpg",
+    "choices": [],
+    "ending": "You acted fast and lost everything. A detective’s mistake."
+  },
+  "fail_internal_disgraced": {
+    "text": "You track Torres alone, but he’s long gone. NexCorp cuts you off, and the city’s laughing. You’re finished. Case closed.",
+    "image": "assets/panel34.jpg",
+    "choices": [],
+    "ending": "You went rogue and fell. Neon City has no mercy."
+  },
+  "fail_external_missed": {
+    "text": "You hunt the hackers but find nothing. The breach continues, and NexCorp’s ruined. You’re out of leads and out of time. Case closed.",
+    "image": "assets/panel35.jpg",
+    "choices": [],
+    "ending": "You missed the mark, and NexCorp paid the price. Game over."
+  },
+  "fail_external_alienated": {
+    "text": "Lena shuts you out, and QuantumSync’s leak sinks NexCorp. Your reputation’s shot, and the city’s done with you. Case closed.",
+    "image": "assets/panel36.jpg",
+    "choices": [],
+    "ending": "You burned your bridges and lost the case. Neon City’s cruel."
+  },
+  "fail_external_disgraced": {
+    "text": "Going rogue gets you nothing but trouble. QuantumSync sues, NexCorp fires you, and the hacker’s gone. Case closed.",
+    "image": "assets/panel37.jpg",
+    "choices": [],
+    "ending": "You played dirty and lost it all. Neon City’s no place for heroes."
+  }
+}
