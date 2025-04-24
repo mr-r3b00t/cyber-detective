@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber Noir Detective</title>
+  <style>
+    body {
+      background: #111;
+      color: #fff;
+      font-family: 'Courier New', monospace;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    .comic-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .panel {
+      border: 2px solid #fff;
+      box-shadow: 0 0 10px #0ff, 0 0 20px #f0f;
+      margin-bottom: 20px;
+      background: #000;
+    }
+
+    .panel img {
+      width: 100%;
+      height: auto;
+      filter: grayscale(100%) contrast(150%);
+    }
+
+    .narration {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      font-size: 1.2em;
+      text-align: center;
+      border-top: 1px solid #fff;
+    }
+
+    .ending {
+      font-size: 1.4em;
+      color: #0ff;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .choices {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .choices button {
+      background: #0ff;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 1em;
+      text-transform: uppercase;
+      transition: background 0.3s;
+    }
+
+    .choices button:hover {
+      background: #f0f;
+    }
+
+    .restart {
+      background: #f00;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      cursor: pointer;
+      font-size: 1em;
+      margin: 20px auto;
+      display: block;
+    }
+
+    .restart:hover {
+      background: #c00;
+    }
+
+    @media (max-width: 600px) {
+      .comic-container {
+        padding: 10px;
+      }
+
+      .narration {
+        font-size: 1em;
+      }
+
+      .choices button {
+        padding: 8px 15px;
+        font-size: 0.9em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="comic-container">
+    <div class="panel" id="panel">
+      <img src="assets/panel1.jpg" alt="Comic panel" id="panel-image">
+      <div class="narration" id="narration"></div>
+    </div>
+    <div class="ending" id="ending"></div>
+    <div class="choices" id="choices"></div>
+    <button class="restart" id="restart" style="display: none;">Restart Case</button>
+  </div>
+
+  <script>
+    let story = {};
+    let currentState = localStorage.getItem("currentState") || "start";
+
+    // Load the story from story.json
+    fetch('story.json')
+      .then(response => response.json())
+      .then(data => {
+        story = data;
+        render();
+      })
+      .catch(error => {
+        console.error('Error loading story:', error);
+        document.getElementById("narration").textContent = "Failed to load story. Please check story.json.";
+      });
+
+    function render() {
+      const panel = document.getElementById("panel");
+      const narration = document.getElementById("narration");
+      const ending = document.getElementById("ending");
+      const choicesDiv = document.getElementById("choices");
+      const panelImage = document.getElementById("panel-image");
+      const restartButton = document.getElementById("restart");
+
+      const current = story[currentState];
+      if (!current) {
+        narration.textContent = "Error: Story state not found.";
+        return;
+      }
+
+      narration.textContent = current.text;
+      panelImage.src = current.image;
+      ending.textContent = current.ending || "";
+      choicesDiv.innerHTML = "";
+
+      if (current.choices.length === 0) {
+        restartButton.style.display = "block";
+      } else {
+        restartButton.style.display = "none";
+      }
+
+      current.choices.forEach(choice => {
+        const button = document.createElement("button");
+        button.textContent = choice.text;
+        button.onclick = () => makeChoice(choice.next);
+        choicesDiv.appendChild(button);
+      });
+
+      localStorage.setItem("currentState", currentState);
+    }
+
+    function makeChoice(nextState) {
+      currentState = nextState;
+      render();
+    }
+
+    function restart() {
+      currentState = "start";
+      localStorage.setItem("currentState", currentState);
+      render();
+    }
+
+    document.getElementById("restart").onclick = restart;
+  </script>
+</body>
+</html>
