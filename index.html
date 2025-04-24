@@ -162,11 +162,13 @@
     let currentState = localStorage.getItem("currentState") || "start";
     const fallbackImage = "assets/fallback.jpg"; // Ensure this exists
 
-    // Load story with retry mechanism
+    // Load story with improved error handling
     function loadStory(retries = 3) {
       fetch('assets/story.json')
         .then(response => {
-          if (!response.ok) throw new Error('Failed to load story.json');
+          if (!response.ok) {
+            throw new Error(`Failed to load story.json: ${response.status} ${response.statusText}`);
+          }
           return response.json();
         })
         .then(data => {
@@ -178,16 +180,34 @@
           render();
         })
         .catch(error => {
-          console.error('Error loading story:', error);
-          if (retries > 0) {
-            setTimeout(() => loadStory(retries - 1), 1000);
+          console.error(`Error loading story (retries left: ${retries}):`, error);
+          let userMessage = "Failed to load story. Please try again.";
+          if (error.message.includes("404")) {
+            userMessage = "Story file not found. Contact the administrator.";
+          } else if (error.message.includes("Failed to fetch")) {
+            userMessage = "Network error. Check your connection and try again.";
+          } else if (error.message.includes("Unexpected token")) {
+            userMessage = "Invalid story file format. Contact the administrator.";
+          }
+
+          if (retries > 0 && !error.message.includes("404") && !error.message.includes("Unexpected token")) {
+            setTimeout(() => loadStory(retries - 1), 2000); // Increased delay
           } else {
-            document.getElementById("narration").textContent = "Failed to load story. Please try again.";
+            document.getElementById("narration").textContent = userMessage;
             const retryButton = document.createElement("button");
             retryButton.textContent = "Retry";
             retryButton.className = "restart";
             retryButton.onclick = () => loadStory(3);
             document.getElementById("choices").appendChild(retryButton);
+            // Fallback story (minimal)
+            story = {
+              start: {
+                text: "Error: Story failed to load. You’re in Neon City, but the case is cold. Try again?",
+                image: "assets/fallback.jpg",
+                choices: [{ text: "Retry", next: "start" }]
+              }
+            };
+            render();
           }
         });
     }
