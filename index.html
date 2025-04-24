@@ -100,7 +100,7 @@
       outline: 2px solid #0ff;
     }
 
-    .restart {
+    .restart, .tweet {
       background: #000;
       color: #f00;
       border: 2px solid #f00;
@@ -113,11 +113,24 @@
       box-shadow: 0 0 10px #f00;
     }
 
+    .tweet {
+      color: #0ff;
+      border-color: #0ff;
+      box-shadow: 0 0 10px #0ff;
+    }
+
     .restart:hover, .restart:focus {
       background: #f00;
       color: #000;
       box-shadow: 0 0 20px #f00;
       outline: 2px solid #f00;
+    }
+
+    .tweet:hover, .tweet:focus {
+      background: #0ff;
+      color: #000;
+      box-shadow: 0 0 20px #0ff;
+      outline: 2px solid #0ff;
     }
 
     footer {
@@ -164,6 +177,11 @@
         font-size: 1.1em;
       }
 
+      .restart, .tweet {
+        padding: 8px 16px;
+        font-size: 0.9em;
+      }
+
       footer {
         font-size: 0.8em;
         padding: 10px;
@@ -180,9 +198,10 @@
     <div class="ending" id="ending" aria-live="polite"></div>
     <div class="choices" id="choices"></div>
     <button class="restart" id="restart" style="display: none;">Restart Case</button>
+    <button class="tweet" id="tweet" style="display: none;">Tweet Your Outcome</button>
   </div>
   <footer>
-    Copyright &copy; Xservus Limited. Created by mrr3b00t. <a href="https://www.pwndefend.com" target="_blank">www.pwndefend.com</a>
+    Copyright © Xservus Limited. Created by mrr3b00t. <a href="https://www.pwndefend.com" target="_blank">www.pwndefend.com</a>
   </footer>
 
   <script>
@@ -219,7 +238,7 @@
           }
 
           if (retries > 0 && !error.message.includes("404") && !error.message.includes("Unexpected token")) {
-            setTimeout(() => loadStory(retries - 1), 2000); // Increased delay
+            setTimeout(() => loadStory(retries - 1), 2000);
           } else {
             document.getElementById("narration").textContent = userMessage;
             const retryButton = document.createElement("button");
@@ -227,7 +246,6 @@
             retryButton.className = "restart";
             retryButton.onclick = () => loadStory(3);
             document.getElementById("choices").appendChild(retryButton);
-            // Fallback story (minimal)
             story = {
               start: {
                 text: "Error: Story failed to load. You’re in Neon City, but the case is cold. Try again?",
@@ -247,6 +265,7 @@
       const choicesDiv = document.getElementById("choices");
       const panelImage = document.getElementById("panel-image");
       const restartButton = document.getElementById("restart");
+      const tweetButton = document.getElementById("tweet");
 
       const current = story[currentState];
       if (!current) {
@@ -266,18 +285,21 @@
 
       narration.textContent = current.text;
       panelImage.src = current.image || fallbackImage;
-      panelImage.alt = current.text.slice(0, 100) + "..."; // Dynamic alt text
-      panelImage.onerror = () => { panelImage.src = fallbackImage; }; // Handle image load failure
+      panelImage.alt = current.text.slice(0, 100) + "...";
+      panelImage.onerror = () => { panelImage.src = fallbackImage; };
       ending.textContent = current.ending || "";
       choicesDiv.innerHTML = "";
 
       if (current.choices.length === 0) {
         restartButton.style.display = "block";
+        tweetButton.style.display = "block";
       } else {
         restartButton.style.display = "none";
+        tweetButton.style.display = "none";
       }
 
-      current.choices.forEach(choice => {
+      const choices = current.choices || [];
+      choices.forEach(choice => {
         const button = document.createElement("button");
         button.textContent = choice.text;
         button.onclick = () => makeChoice(choice.next);
@@ -299,7 +321,28 @@
       render();
     }
 
+    function tweetOutcome() {
+      const current = story[currentState];
+      let message = "";
+      const successEndings = ["lessons_internal_report", "lessons_external_report", "lessons_internal_warn", "lessons_external_warn"];
+      const partialSuccessEndings = ["lessons_internal_expose", "lessons_external_expose", "lessons_internal_audit"];
+      const failureEndings = ["fail_internal_lost", "fail_internal_wipe", "fail_internal_disgraced", "fail_external_missed", "fail_external_alienated", "fail_external_disgraced"];
+      const link = "https://mr-r3b00t.github.io/cyber-detective/";
+
+      if (successEndings.includes(currentState)) {
+        message = `I cracked the case as Riley Voss in Neon City, saving NexCorp from a cyber breach! 🕵️‍♂️ Play Cyber Noir Detective to solve the case: ${link} #CyberNoirDetective #Cyberpunk`;
+      } else if (partialSuccessEndings.includes(currentState)) {
+        message = `Exposed the truth in Neon City as Riley Voss, but at a cost. NexCorp survived, barely. 🕵️‍♂️ Play Cyber Noir Detective: ${link} #CyberNoirDetective #Cyberpunk`;
+      } else if (failureEndings.includes(currentState)) {
+        message = `Failed the case in Neon City as Riley Voss. The hackers won, and I'm disgraced. 😔 Try Cyber Noir Detective: ${link} #CyberNoirDetective #Cyberpunk`;
+      }
+
+      const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
+      window.open(tweetUrl, '_blank');
+    }
+
     document.getElementById("restart").onclick = restart;
+    document.getElementById("tweet").onclick = tweetOutcome;
 
     // Initial load
     loadStory();
