@@ -4,47 +4,73 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cyber Noir Detective</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
-      background: #111;
+      background: #000;
       color: #fff;
-      font-family: 'Courier New', monospace;
+      font-family: 'Oswald', monospace;
       margin: 0;
       overflow-x: hidden;
     }
 
     .comic-container {
-      max-width: 800px;
+      max-width: 600px;
       margin: 0 auto;
       padding: 20px;
+      position: relative;
     }
 
     .panel {
-      border: 2px solid #fff;
-      box-shadow: 0 0 10px #0ff, 0 0 20px #f0f;
-      margin-bottom: 20px;
+      max-width: 100%;
+      aspect-ratio: 4 / 3;
+      border: 3px solid #fff;
+      border-image: linear-gradient(to bottom, #fff, #0ff, #fff) 1;
+      box-shadow: 0 0 15px #0ff, 0 0 30px #f0f, inset 0 0 5px #000;
+      margin-bottom: 30px;
       background: #000;
+      position: relative;
+      transform: rotate(-1deg); /* Slight tilt for comic energy */
+      transition: opacity 0.5s ease-in-out;
     }
 
     .panel img {
       width: 100%;
-      height: auto;
-      filter: grayscale(100%) contrast(150%);
+      height: 100%;
+      object-fit: cover;
+      filter: contrast(200%) brightness(1.2) grayscale(100%);
+    }
+
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFEl workspace/d3d3D0f3f3f0a0a0a0a0b0b0b0b0c0c0c0c0d0d0d0d0e0e0e0e0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0wetGAAAABJRU5ErkJggg==') repeat;
+      opacity: 0.3;
+      pointer-events: none;
     }
 
     .narration {
-      background: rgba(0, 0, 0, 0.8);
-      padding: 15px;
-      font-size: 1.2em;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 10px;
+      font-size: 1.1em;
       text-align: center;
-      border-top: 1px solid #fff;
+      border-top: 2px solid #fff;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .ending {
-      font-size: 1.4em;
+      font-size: 1.3em;
       color: #0ff;
       text-align: center;
       margin: 20px 0;
+      text-shadow: 0 0 10px #0ff;
     }
 
     .choices {
@@ -52,36 +78,44 @@
       justify-content: center;
       gap: 10px;
       flex-wrap: wrap;
+      transition: opacity 0.5s ease-in-out;
     }
 
     .choices button {
-      background: #0ff;
-      color: #000;
-      border: none;
-      padding: 10px 20px;
+      background: #000;
+      color: #0ff;
+      border: 2px solid #0ff;
+      padding: 8px 16px;
       cursor: pointer;
-      font-size: 1em;
+      font-size: 0.9em;
       text-transform: uppercase;
-      transition: background 0.3s;
+      transition: all 0.3s;
+      box-shadow: 0 0 5px #0ff;
     }
 
     .choices button:hover {
-      background: #f0f;
+      background: #0ff;
+      color: #000;
+      box-shadow: 0 0 15px #0ff;
     }
 
     .restart {
-      background: #f00;
-      color: #fff;
+      background: #000;
+      color: #f00;
+      border: 2px solid #f00;
       padding: 10px 20px;
-      border: none;
       cursor: pointer;
       font-size: 1em;
       margin: 20px auto;
       display: block;
+      transition: all 0.3s;
+      box-shadow: 0 0 10px #f00;
     }
 
     .restart:hover {
-      background: #c00;
+      background: #f00;
+      color: #000;
+      box-shadow: 0 0 20px #f00;
     }
 
     @media (max-width: 600px) {
@@ -89,13 +123,22 @@
         padding: 10px;
       }
 
+      .panel {
+        max-width: 400px;
+      }
+
       .narration {
-        font-size: 1em;
+        font-size: 0.9em;
+        padding: 8px;
       }
 
       .choices button {
-        padding: 8px 15px;
-        font-size: 0.9em;
+        padding: 6px 12px;
+        font-size: 0.8em;
+      }
+
+      .ending {
+        font-size: 1.1em;
       }
     }
   </style>
@@ -116,7 +159,7 @@
     let currentState = localStorage.getItem("currentState") || "start";
 
     // Load the story from story.json
-    fetch('story.json')
+    fetch('assets/story.json')
       .then(response => response.json())
       .then(data => {
         story = data;
@@ -140,6 +183,14 @@
         narration.textContent = "Error: Story state not found.";
         return;
       }
+
+      // Fade in panel and choices
+      panel.style.opacity = 0;
+      choicesDiv.style.opacity = 0;
+      setTimeout(() => {
+        panel.style.opacity = 1;
+        choicesDiv.style.opacity = 1;
+      }, 100);
 
       narration.textContent = current.text;
       panelImage.src = current.image;
