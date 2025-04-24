@@ -100,7 +100,7 @@
       outline: 2px solid #0ff;
     }
 
-    .restart, .reset {
+    .restart {
       background: #000;
       color: #f00;
       border: 2px solid #f00;
@@ -113,11 +113,32 @@
       box-shadow: 0 0 10px #f00;
     }
 
-    .restart:hover, .restart:focus, .reset:hover, .reset:focus {
+    .restart:hover, .restart:focus {
       background: #f00;
       color: #000;
       box-shadow: 0 0 20px #f00;
       outline: 2px solid #f00;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #111;
+      border-top: 2px solid #0ff;
+      margin-top: 20px;
+      font-size: 0.9em;
+      color: #fff;
+    }
+
+    footer a {
+      color: #0ff;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    footer a:hover, footer a:focus {
+      text-shadow: 0 0 10px #0ff;
+      color: #fff;
     }
 
     @media (max-width: 600px) {
@@ -142,6 +163,11 @@
       .ending {
         font-size: 1.1em;
       }
+
+      footer {
+        font-size: 0.8em;
+        padding: 10px;
+      }
     }
   </style>
 </head>
@@ -154,8 +180,10 @@
     <div class="ending" id="ending" aria-live="polite"></div>
     <div class="choices" id="choices"></div>
     <button class="restart" id="restart" style="display: none;">Restart Case</button>
-    <button class="reset" id="reset">Reset Progress</button>
   </div>
+  <footer>
+    Copyright &copy; Xservus Limited. Created by mrr3b00t. <a href="https://www.pwndefend.com" target="_blank">www.pwndefend.com</a>
+  </footer>
 
   <script>
     let story = {};
@@ -271,14 +299,7 @@
       render();
     }
 
-    function resetProgress() {
-      localStorage.removeItem("currentState");
-      currentState = "start";
-      render();
-    }
-
     document.getElementById("restart").onclick = restart;
-    document.getElementById("reset").onclick = resetProgress;
 
     // Initial load
     loadStory();
