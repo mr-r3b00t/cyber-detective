@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Story Editor - Cyber Noir Detective</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      font-family: 'Oswald', monospace;
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+    }
+
+    .editor-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #111;
+      border: 2px solid #0ff;
+      box-shadow: 0 0 15px #0ff, 0 0 30px #f0f;
+    }
+
+    h1 {
+      text-align: center;
+      color: #0ff;
+      text-shadow: 0 0 10px #0ff;
+      margin-bottom: 20px;
+    }
+
+    .node-list {
+      margin-bottom: 20px;
+    }
+
+    .node {
+      background: #222;
+      border: 1px solid #0ff;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 0 5px #0ff;
+    }
+
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .node-id {
+      font-size: 1.2em;
+      color: #f0f;
+    }
+
+    .node-content label {
+      display: block;
+      margin: 10px 0 5px;
+      color: #0ff;
+    }
+
+    .node-content input, .node-content textarea {
+      width: 100%;
+      background: #333;
+      border: 1px solid #0ff;
+      color: #fff;
+      padding: 8px;
+      font-family: 'Oswald', monospace;
+      box-sizing: border-box;
+    }
+
+    .node-content textarea {
+      height: 100px;
+      resize: vertical;
+    }
+
+    .choices-list {
+      margin-top: 15px;
+    }
+
+    .choice {
+      background: #333;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #f0f;
+    }
+
+    .choice input {
+      margin: 5px 0;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      background: #000;
+      color: #0ff;
+      border: 2px solid #0ff;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      transition: all 0.3s;
+      box-shadow: 0 0 5px #0ff;
+    }
+
+    button:hover, button:focus {
+      background: #0ff;
+      color: #000;
+      box-shadow: 0 0 15px #0ff;
+      outline: 2px solid #0ff;
+    }
+
+    button.delete {
+      color: #f00;
+      border-color: #f00;
+      box-shadow: 0 0 5px #f00;
+    }
+
+    button.delete:hover, button.delete:focus {
+      background: #f00;
+      color: #000;
+      box-shadow: 0 0 15px #f00;
+      outline: 2px solid #f00;
+    }
+
+    .error {
+      color: #f00;
+      text-align: center;
+      margin: 10px 0;
+      text-shadow: 0 0 5px #f00;
+    }
+
+    .export-button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 1em;
+    }
+
+    @media (max-width: 600px) {
+      .editor-container {
+        padding: 10px;
+      }
+
+      .node {
+        padding: 10px;
+      }
+
+      .node-content input, .node-content textarea {
+        font-size: 0.9em;
+      }
+
+      button {
+        padding: 6px 12px;
+        font-size: 0.8em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="editor-container">
+    <h1>Story Editor - Cyber Noir Detective</h1>
+    <div id="error" class="error"></div>
+    <div class="node-list" id="node-list"></div>
+    <button onclick="addNode()">Add New Node</button>
+    <button class="export-button" onclick="exportJson()">Export story.json</button>
+  </div>
+
+  <script>
+    let story = {};
+    let nodeCounter = 0; // For generating unique node IDs
+
+    // Load story.json
+    function loadStory() {
+      fetch('assets/story.json')
+        .then(response => {
+          if (!response.ok) throw new Error(`Failed to load story.json: ${response.status} ${response.statusText}`);
+          return response.json();
+        })
+        .then(data => {
+          story = data;
+          nodeCounter = Object.keys(story).length; // Initialize counter
+          renderNodes();
+        })
+        .catch(error => {
+          document.getElementById('error').textContent = `Error loading story: ${error.message}. Please ensure assets/story.json exists.`;
+          console.error('Error loading story:', error);
+        });
+    }
+
+    // Render all nodes
+    function renderNodes() {
+      const nodeList = document.getElementById('node-list');
+      nodeList.innerHTML = '';
+      Object.keys(story).forEach(nodeId => {
+        const node = story[nodeId];
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = 'node';
+        nodeDiv.innerHTML = `
+          <div class="node-header">
+            <span class="node-id">Node ID: <input type="text" value="${nodeId}" onchange="updateNodeId('${nodeId}', this.value)"></span>
+            <button class="delete" onclick="deleteNode('${nodeId}')">Delete Node</button>
+          </div>
+          <div class="node-content">
+            <label>Text</label>
+            <textarea onchange="updateNode('${nodeId}', 'text', this.value)">${node.text || ''}</textarea>
+            <label>Image</label>
+            <input type="text" value="${node.image || ''}" onchange="updateNode('${nodeId}', 'image', this.value)">
+            <label>Ending (optional)</label>
+            <input type="text" value="${node.ending || ''}" onchange="updateNode('${nodeId}', 'ending', this.value)">
+            <div class="choices-list" id="choices-${nodeId}">
+              <label>Choices</label>
+            </div>
+            <div class="button-group">
+              <button onclick="addChoice('${nodeId}')">Add Choice</button>
+            </div>
+          </div>
+        `;
+        nodeList.appendChild(nodeDiv);
+        renderChoices(nodeId);
+      });
+    }
+
+    // Render choices for a node
+    function renderChoices(nodeId) {
+      const choicesList = document.getElementById(`choices-${nodeId}`);
+      const choices = story[nodeId].choices || [];
+      choicesList.innerHTML = '<label>Choices</label>';
+      choices.forEach((choice, index) => {
+        const choiceDiv = document.createElement('div');
+        choiceDiv.className = 'choice';
+        choiceDiv.innerHTML = `
+          <input type="text" value="${choice.text || ''}" placeholder="Choice Text" onchange="updateChoice('${nodeId}', ${index}, 'text', this.value)">
+          <input type="text" value="${choice.next || ''}" placeholder="Next Node ID" onchange="updateChoice('${nodeId}', ${index}, 'next', this.value)">
+          <button class="delete" onclick="deleteChoice('${nodeId}', ${index})">Delete Choice</button>
+        `;
+        choicesList.appendChild(choiceDiv);
+      });
+    }
+
+    // Update node field
+    function updateNode(nodeId, field, value) {
+      story[nodeId][field] = value;
+      if (field === 'ending' && !value) {
+        delete story[nodeId].ending; // Remove empty ending
+      }
+    }
+
+    // Update node ID
+    function updateNodeId(oldId, newId) {
+      if (newId && newId !== oldId && !story[newId]) {
+        // Update references in choices
+        Object.values(story).forEach(node => {
+          if (node.choices) {
+            node.choices.forEach(choice => {
+              if (choice.next === oldId) {
+                choice.next = newId;
+              }
+            });
+          }
+        });
+        // Rename node
+        story[newId] = { ...story[oldId] };
+        delete story[oldId];
+        renderNodes();
+      } else {
+        alert('Invalid or duplicate Node ID.');
+        renderNodes(); // Revert invalid change
+      }
+    }
+
+    // Update choice field
+    function updateChoice(nodeId, index, field, value) {
+      if (!story[nodeId].choices) story[nodeId].choices = [];
+      story[nodeId].choices[index][field] = value;
+    }
+
+    // Add new node
+    function addNode() {
+      const newId = `node_${nodeCounter++}`;
+      story[newId] = {
+        text: '',
+        image: 'assets/panel.jpg',
+        choices: []
+      };
+      renderNodes();
+    }
+
+    // Delete node
+    function deleteNode(nodeId) {
+      // Check if node is referenced
+      const isReferenced = Object.values(story).some(node =>
+        node.choices && node.choices.some(choice => choice.next === nodeId)
+      );
+      if (isReferenced) {
+        alert('Cannot delete node: It is referenced by another node’s choice.');
+        return;
+      }
+      if (confirm(`Delete node "${nodeId}"?`)) {
+        delete story[nodeId];
+        renderNodes();
+      }
+    }
+
+    // Add choice to node
+    function addChoice(nodeId) {
+      if (!story[nodeId].choices) story[nodeId].choices = [];
+      story[nodeId].choices.push({ text: '', next: '' });
+      renderChoices(nodeId);
+    }
+
+    // Delete choice
+    function deleteChoice(nodeId, index) {
+      if (confirm('Delete this choice?')) {
+        story[nodeId].choices.splice(index, 1);
+        renderChoices(nodeId);
+      }
+    }
+
+    // Export story.json
+    function exportJson() {
+      // Validate choices
+      for (const nodeId in story) {
+        const choices = story[nodeId].choices || [];
+        for (const choice of choices) {
+          if (choice.next && !story[choice.next]) {
+            alert(`Invalid choice in "${nodeId}": Next node "${choice.next}" does not exist.`);
+            return;
+          }
+        }
+      }
+      const json = JSON.stringify(story, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'story.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Initialize
+    loadStory();
+  </script>
+</body>
+</html>
