@@ -133,6 +133,79 @@
       animation: digitalNoise 4s infinite steps(4);
     }
 
+    .info-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      background: rgba(0, 255, 255, 0.2);
+      border: 2px solid #0ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+      z-index: 20;
+    }
+
+    .info-icon:hover, .info-icon:focus {
+      background: rgba(0, 255, 255, 0.5);
+      transform: scale(1.1);
+      box-shadow: 0 0 10px #0ff;
+      outline: none;
+    }
+
+    .info-icon svg {
+      width: 20px;
+      height: 20px;
+      fill: #0ff;
+    }
+
+    .info-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #111;
+      border: 2px solid #0ff;
+      box-shadow: 0 0 20px #0ff;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      z-index: 1000;
+      color: #fff;
+      text-align: center;
+      border-radius: 5px;
+    }
+
+    .info-modal-content {
+      font-size: 1.1em;
+      margin-bottom: 20px;
+    }
+
+    .info-modal-close {
+      background: #000;
+      color: #0ff;
+      border: 2px solid #0ff;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      transition: all 0.3s;
+      box-shadow: 0 0 10px #0ff;
+    }
+
+    .info-modal-close:hover, .info-modal-close:focus {
+      background: #0ff;
+      color: #000;
+      box-shadow: 0 0 20px #0ff;
+      outline: 3px solid #0ff;
+      outline-offset: 2px;
+    }
+
     .narration {
       background: rgba(0, 0, 0, 0.9);
       padding: 10px;
@@ -447,6 +520,22 @@
       animation: none;
     }
 
+    :fullscreen .info-icon,
+    :-webkit-full-screen .info-icon,
+    :-moz-full-screen .info-icon {
+      top: 10px;
+      right: 10px;
+      width: 36px;
+      height: 36px;
+    }
+
+    :fullscreen .info-icon svg,
+    :-webkit-full-screen .info-icon svg,
+    :-moz-full-screen .info-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
     :fullscreen .narration,
     :-webkit-full-screen .narration,
     :-moz-full-screen .narration {
@@ -542,6 +631,30 @@
         max-width: 95vw;
       }
 
+      .info-icon {
+        width: 24px;
+        height: 24px;
+      }
+
+      .info-icon svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      .info-modal {
+        max-width: 80%;
+        padding: 15px;
+      }
+
+      .info-modal-content {
+        font-size: 1em;
+      }
+
+      .info-modal-close {
+        padding: 6px 12px;
+        font-size: 0.8em;
+      }
+
       .narration {
         font-size: 0.9em;
         padding: 8px;
@@ -617,6 +730,20 @@
       :-moz-full-screen .panel {
         width: 100vw;
         height: 100vh;
+      }
+
+      :fullscreen .info-icon,
+      :-webkit-full-screen .info-icon,
+      :-moz-full-screen .info-icon {
+        width: 30px;
+        height: 30px;
+      }
+
+      :fullscreen .info-icon svg,
+      :-webkit-full-screen .info-icon svg,
+      :-moz-full-screen .info-icon svg {
+        width: 20px;
+        height: 20px;
       }
 
       :fullscreen .narration,
@@ -832,6 +959,11 @@
     <div class="panel" id="panel">
       <img src="assets/panel1.jpg" alt="Comic panel" id="panel-image">
       <div class="narration" id="narration" aria-live="polite" aria-atomic="true"></div>
+      <div class="info-icon" id="info-icon" role="button" tabindex="0" aria-label="View additional information">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v2h-2V7zm0 4h2v6h-2v-6z"/>
+        </svg>
+      </div>
     </div>
     <div class="ending" id="ending" aria-live="polite" aria-atomic="true"></div>
     <div class="choices" id="choices"></div>
@@ -848,6 +980,11 @@
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
       </svg>
+    </div>
+    <div class="info-modal" id="info-modal" role="dialog" aria-labelledby="info-modal-title" aria-modal="true" tabindex="-1">
+      <h2 id="info-modal-title" class="sr-only">Additional Information</h2>
+      <p class="info-modal-content" id="info-modal-content"></p>
+      <button class="info-modal-close" id="info-modal-close" aria-label="Close information modal">Close</button>
     </div>
   </div>
   <audio id="background-rain" autoplay loop>
@@ -984,6 +1121,53 @@
       }
     };
 
+    // Info modal handling
+    const infoIcon = document.getElementById("info-icon");
+    const infoModal = document.getElementById("info-modal");
+    const infoModalContent = document.getElementById("info-modal-content");
+    const infoModalClose = document.getElementById("info-modal-close");
+
+    infoIcon.onclick = () => {
+      const current = story[currentState];
+      infoModalContent.textContent = current.info || "No additional information available.";
+      infoModal.style.display = "block";
+      infoModalClose.focus();
+      hasInteracted = true;
+    };
+
+    infoIcon.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        infoIcon.click();
+      }
+    };
+
+    infoModalClose.onclick = () => {
+      infoModal.style.display = "none";
+      infoIcon.focus();
+    };
+
+    infoModalClose.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        infoModalClose.click();
+      }
+    };
+
+    // Trap focus in modal
+    infoModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        const focusable = infoModalClose;
+        if (document.activeElement === focusable && !e.shiftKey) {
+          e.preventDefault();
+          focusable.focus();
+        }
+      }
+      if (e.key === 'Escape') {
+        infoModalClose.click();
+      }
+    });
+
     // Full-screen functionality
     const fullscreenButton = document.getElementById("fullscreen");
     fullscreenButton.onclick = toggleFullScreen;
@@ -1071,7 +1255,8 @@
                 text: "Error: Story failed to load. You're in Neon City, but the case is cold. Try again?",
                 image: "assets/fallback.jpg",
                 alt: "Error placeholder",
-                choices: [{ text: "Retry", next: "start" }]
+                choices: [{ text: "Retry", next: "start" }],
+                info: "An error occurred loading the story data."
               }
             };
             console.log("Using fallback story:", story);
@@ -1104,6 +1289,7 @@
             });
           }
         }
+        // Info field is optional, no validation required
       }
     }
 
@@ -1133,6 +1319,9 @@
         }
 
         console.log(`Rendering state: ${currentState}`, current);
+
+        // Hide info modal when changing states
+        infoModal.style.display = "none";
 
         // Remove previous transition classes
         panel.classList.remove("transition-in", "transition-out");
