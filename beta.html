@@ -197,7 +197,7 @@
       z-index: 20;
     }
 
-    .restart, .tweet, .fullscreen {
+    .restart, .tweet, .bluesky, .fullscreen {
       background: #000;
       color: #f00;
       border: 2px solid #f00;
@@ -212,6 +212,12 @@
       color: #0ff;
       border-color: #0ff;
       box-shadow: 0 0 10px #0ff;
+    }
+
+    .bluesky {
+      color: #1DA1F2;
+      border-color: #1DA1F2;
+      box-shadow: 0 0 10px #1DA1F2;
     }
 
     .fullscreen {
@@ -233,6 +239,14 @@
       color: #000;
       box-shadow: 0 0 20px #0ff;
       outline: 3px solid #0ff;
+      outline-offset: 2px;
+    }
+
+    .bluesky:hover, .bluesky:focus {
+      background: #1DA1F2;
+      color: #000;
+      box-shadow: 0 0 20px #1DA1F2;
+      outline: 3px solid #1DA1F2;
       outline-offset: 2px;
     }
 
@@ -547,7 +561,7 @@
         gap: 5px;
       }
 
-      .restart, .tweet {
+      .restart, .tweet, .bluesky {
         padding: 8px 16px;
         font-size: 0.9em;
       }
@@ -824,6 +838,7 @@
     <div class="menu-buttons">
       <button class="restart" id="restart" style="display: none;">Restart Case</button>
       <button class="tweet" id="tweet" style="display: none;">Tweet Your Outcome</button>
+      <button class="bluesky" id="bluesky" style="display: none;">Post to Bluesky</button>
       <button class="fullscreen" id="fullscreen">Enter Full Screen</button>
     </div>
     <div class="audio-control" id="audio-control" role="button" tabindex="0" aria-label="Pause background audio">
@@ -1100,8 +1115,9 @@
       const panelImage = document.getElementById("panel-image");
       const restartButton = document.getElementById("restart");
       const tweetButton = document.getElementById("tweet");
-      if (!panel || !narration || !ending || !choicesDiv || !panelImage || !restartButton || !tweetButton) {
-        console.error("Required DOM elements missing:", { panel, narration, ending, choicesDiv, panelImage, restartButton, tweetButton });
+      const blueskyButton = document.getElementById("bluesky");
+      if (!panel || !narration || !ending || !choicesDiv || !panelImage || !restartButton || !tweetButton || !blueskyButton) {
+        console.error("Required DOM elements missing:", { panel, narration, ending, choicesDiv, panelImage, restartButton, tweetButton, blueskyButton });
         return;
       }
 
@@ -1176,6 +1192,7 @@
             // Treat as an ending
             restartButton.style.display = "inline-block";
             tweetButton.style.display = "inline-block";
+            blueskyButton.style.display = "inline-block";
             const successEndings = ["lessons_internal_report", "lessons_external_report", "lessons_internal_warn", "lessons_external_warn"];
             const partialSuccessEndings = ["lessons_internal_expose", "lessons_external_expose", "lessons_internal_audit"];
             const failureEndings = ["fail_internal_lost", "fail_internal_wipe", "fail_internal_disgraced", "fail_external_missed", "fail_external_alienated", "fail_external_disgraced"];
@@ -1200,6 +1217,7 @@
           } else {
             restartButton.style.display = "none";
             tweetButton.style.display = "none";
+            blueskyButton.style.display = "none";
             // Validate choices
             let validChoices = 0;
             choices.forEach((choice, index) => {
@@ -1219,6 +1237,8 @@
               console.error(`No valid choices in state ${currentState}:`, choices);
               narration.textContent = "Error: Invalid choices provided. Please restart.";
               restartButton.style.display = "inline-block";
+              tweetButton.style.display = "inline-block";
+              blueskyButton.style.display = "inline-block";
               return;
             }
           }
@@ -1366,8 +1386,40 @@
       hasInteracted = true;
     }
 
+    function postToBluesky() {
+      if (!story[currentState]) {
+        console.error("No story state for Bluesky post");
+        return;
+      }
+      const current = story[currentState];
+      let message = "";
+      const successEndings = ["lessons_internal_report", "lessons_external_report", "lessons_internal_warn", "lessons_external_warn"];
+      const partialSuccessEndings = ["lessons_internal_expose", "lessons_external_expose", "lessons_internal_audit"];
+      const failureEndings = ["fail_internal_lost", "fail_internal_wipe", "fail_internal_disgraced", "fail_external_missed", "fail_external_alienated", "fail_external_disgraced"];
+      const link = window.location.href;
+
+      if (successEndings.includes(currentState)) {
+        message = `I cracked the case as Riley Voss in Neon City, saving NexCorp from a cyber breach! 🕵️‍♂️ Play Cyber Noir Detective to solve the case: ${link} #CyberNoirDetective #Cyberpunk`;
+      } else if (partialSuccessEndings.includes(currentState)) {
+        message = `Exposed the truth in Neon City as Riley Voss, but at a cost. NexCorp survived, barely. 🕵️‍♂️ Play Cyber Noir Detective: ${link} #CyberNoirDetective #Cyberpunk`;
+      } else if (failureEndings.includes(currentState)) {
+        message = `Failed the case in Neon City as Riley Voss. The hackers won, and I'm disgraced. 😔 Try Cyber Noir Detective: ${link} #CyberNoirDetective #Cyberpunk`;
+      }
+
+      const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`;
+      window.open(blueskyUrl, '_blank');
+      hasInteracted = true;
+    }
+
     document.getElementById("restart").onclick = restart;
     document.getElementById("tweet").onclick = tweetOutcome;
+    document.getElementById("bluesky").onclick = postToBluesky;
+    document.getElementById("bluesky").onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        postToBluesky();
+      }
+    };
 
     // Reset invalid state on load
     if (!story[currentState]) {
