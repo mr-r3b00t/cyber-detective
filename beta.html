@@ -180,7 +180,7 @@
       outline-offset: 2px;
     }
 
-    .restart, .tweet, .fullscreen {
+    .restart, .tweet, .fullscreen, .debug {
       background: #000;
       color: #f00;
       border: 2px solid #f00;
@@ -205,6 +205,12 @@
       box-shadow: 0 0 10px #fff;
     }
 
+    .debug {
+      color: #ff0;
+      border-color: #ff0;
+      box-shadow: 0 0 10px #ff0;
+    }
+
     .restart:hover, .restart:focus {
       background: #f00;
       color: #000;
@@ -226,6 +232,14 @@
       color: #000;
       box-shadow: 0 0 20px #fff;
       outline: 3px solid #fff;
+      outline-offset: 2px;
+    }
+
+    .debug:hover, .debug:focus {
+      background: #ff0;
+      color: #000;
+      box-shadow: 0 0 20px #ff0;
+      outline: 3px solid #ff0;
       outline-offset: 2px;
     }
 
@@ -396,9 +410,9 @@
       padding: 10px 20px;
     }
 
-    :fullscreen .restart, :fullscreen .tweet, :fullscreen .fullscreen,
-    :-webkit-full-screen .restart, :-webkit-full-screen .tweet, :-webkit-full-screen .fullscreen,
-    :-moz-full-screen .restart, :-moz-full-screen .tweet, :-moz-full-screen .fullscreen {
+    :fullscreen .restart, :fullscreen .tweet, :fullscreen .fullscreen, :fullscreen .debug,
+    :-webkit-full-screen .restart, :-webkit-full-screen .tweet, :-webkit-full-screen .fullscreen, :-webkit-full-screen .debug,
+    :-moz-full-screen .restart, :-moz-full-screen .tweet, :-moz-full-screen .fullscreen, :-moz-full-screen .debug {
       font-size: 1.4em;
       padding: 10px 20px;
       margin: 5px auto;
@@ -442,7 +456,7 @@
         font-size: 1.1em;
       }
 
-      .restart, .tweet {
+      .restart, .tweet, .debug {
         padding: 8px 16px;
         font-size: 0.9em;
       }
@@ -504,9 +518,9 @@
         padding: 8px 16px;
       }
 
-      :fullscreen .restart, :fullscreen .tweet,
-      :-webkit-full-screen .restart, :-webkit-full-screen .tweet,
-      :-moz-full-screen .restart, :-moz-full-screen .tweet {
+      :fullscreen .restart, :fullscreen .tweet, :fullscreen .debug,
+      :-webkit-full-screen .restart, :-webkit-full-screen .tweet, :-webkit-full-screen .debug,
+      :-moz-full-screen .restart, :-moz-full-screen .tweet, :-moz-full-screen .debug {
         font-size: 1em;
         padding: 8px 16px;
       }
@@ -665,6 +679,7 @@
     <button class="restart" id="restart" style="display: none;">Restart Case</button>
     <button class="tweet" id="tweet" style="display: none;">Tweet Your Outcome</button>
     <button class="fullscreen" id="fullscreen">Enter Full Screen</button>
+    <button class="debug" id="debug">Debug State</button>
     <div class="audio-control" id="audio-control" role="button" tabindex="0" aria-label="Pause background audio">
       <span>⏸</span>
     </div>
@@ -829,7 +844,9 @@
         .then(data => {
           console.log("Story loaded:", data);
           story = data;
-          // Validate currentState
+          // Validate story structure
+          validateStory(data);
+          // Reset invalid state
           if (!story[currentState]) {
             console.warn(`State ${currentState} not found, resetting to start`);
             currentState = "start";
@@ -874,6 +891,33 @@
             render();
           }
         });
+    }
+
+    // Validate story.json structure
+    function validateStory(story) {
+      if (!story.start) {
+        throw new Error("Story missing 'start' state");
+      }
+      const states = Object.keys(story);
+      for (const state of states) {
+        const node = story[state];
+        if (!node.text || !node.image || !node.alt) {
+          console.warn(`State '${state}' missing required properties: text, image, or alt`, node);
+        }
+        if (node.choices) {
+          if (!Array.isArray(node.choices)) {
+            console.warn(`State '${state}' has non-array choices:`, node.choices);
+          } else {
+            node.choices.forEach((choice, index) => {
+              if (!choice.text || !choice.next) {
+                console.warn(`Invalid choice at index ${index} in state '${state}':`, choice);
+              } else if (!states.includes(choice.next)) {
+                console.warn(`Choice at index ${index} in state '${state}' points to non-existent state '${choice.next}'`);
+              }
+            });
+          }
+        }
+      }
     }
 
     function render() {
@@ -937,7 +981,12 @@
             panel.classList.remove("transition-in");
           }, 800);
 
-          if (!current.choices || current.choices.length === 0) {
+          // Handle choices or ending
+          const choices = Array.isArray(current.choices) ? current.choices : [];
+          console.log(`Choices for ${currentState}:`, choices);
+
+          if (!current.choices || choices.length === 0) {
+            // Treat as an ending
             restartButton.style.display = "block";
             tweetButton.style.display = "block";
             const successEndings = ["lessons_internal_report", "lessons_external_report", "lessons_internal_warn", "lessons_external_warn"];
@@ -964,27 +1013,28 @@
           } else {
             restartButton.style.display = "none";
             tweetButton.style.display = "none";
-          }
-
-          const choices = Array.isArray(current.choices) ? current.choices : [];
-          console.log(`Choices for ${currentState}:`, choices);
-          if (choices.length === 0 && current.choices !== undefined && current.choices !== null) {
-            console.warn("No valid choices found for state:", currentState, current);
-            narration.textContent = "Error: No valid choices available.";
-            return;
-          }
-          choices.forEach((choice, index) => {
-            if (!choice.text || !choice.next) {
-              console.warn(`Invalid choice at index ${index}:`, choice);
+            // Validate choices
+            let validChoices = 0;
+            choices.forEach((choice, index) => {
+              if (!choice.text || !choice.next) {
+                console.warn(`Invalid choice at index ${index} in state ${currentState}:`, choice);
+                return;
+              }
+              const button = document.createElement("button");
+              button.textContent = choice.text;
+              button.setAttribute("aria-label", `Progress story: ${choice.text}`);
+              button.onclick = () => makeChoice(choice.next);
+              button.tabIndex = 0;
+              choicesDiv.appendChild(button);
+              validChoices++;
+            });
+            if (validChoices === 0 && choices.length > 0) {
+              console.error(`No valid choices in state ${currentState}:`, choices);
+              narration.textContent = "Error: Invalid choices provided. Please restart.";
+              restartButton.style.display = "block";
               return;
             }
-            const button = document.createElement("button");
-            button.textContent = choice.text;
-            button.setAttribute("aria-label", `Progress story: ${choice.text}`);
-            button.onclick = () => makeChoice(choice.next);
-            button.tabIndex = 0;
-            choicesDiv.appendChild(button);
-          });
+          }
 
           // Show buttons with staggered animation
           setTimeout(() => {
@@ -1128,6 +1178,14 @@
 
     document.getElementById("restart").onclick = restart;
     document.getElementById("tweet").onclick = tweetOutcome;
+    document.getElementById("debug").onclick = () => {
+      console.log("Debug State:", {
+        currentState,
+        currentNode: story[currentState],
+        allStates: Object.keys(story)
+      });
+      alert(`Current State: ${currentState}\nNode: ${JSON.stringify(story[currentState], null, 2)}`);
+    };
 
     // Reset invalid state on load
     if (!story[currentState]) {
