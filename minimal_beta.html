@@ -1,0 +1,444 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber-Noir Interactive Story</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: #fff;
+      overflow: hidden;
+    }
+    #comic-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #panel-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: filter 0.3s;
+    }
+    #panel-image.noir {
+      filter: grayscale(100%);
+    }
+    #narration {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    #choices {
+      position: absolute;
+      bottom: 80px;
+      left: 20px;
+      right: 20px;
+      text-align: center;
+    }
+    .choice-button {
+      background: #444;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .choice-button:hover {
+      background: #666;
+    }
+    #info-icon {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #info-icon.info-icon-disabled {
+      display: none;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #333;
+      padding: 20px;
+      border-radius: 5px;
+      z-index: 1000;
+      max-width: 80%;
+      max-height: 80%;
+      overflow: auto;
+    }
+    .modal-content {
+      margin-bottom: 10px;
+    }
+    .modal-close {
+      background: #666;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    #audio-controls {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      z-index: 30;
+    }
+    #jukebox-controls {
+      position: fixed;
+      bottom: 50px;
+      right: 10px;
+      z-index: 30;
+    }
+    button, select {
+      margin: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="comic-container">
+    <img id="panel-image" src="" alt="">
+    <div id="narration"></div>
+    <div id="choices"></div>
+    <span id="info-icon" class="info-icon-disabled">ℹ️</span>
+  </div>
+
+  <div id="welcome-modal" class="modal" style="display: block;">
+    <div class="modal-content">Welcome to Neon City. Click PLAY to begin.</div>
+    <button id="play-button">PLAY</button>
+  </div>
+
+  <div id="info-modal" class="modal">
+    <div id="info-modal-content" class="modal-content"></div>
+    <button id="info-modal-close" class="modal-close">Close</button>
+  </div>
+
+  <div id="error-modal" class="modal">
+    <div id="error-modal-content" class="modal-content"></div>
+    <button id="error-modal-close" class="modal-close">Close</button>
+  </div>
+
+  <div id="audio-controls">
+    <button id="rain-toggle">Rain: Off</button>
+    <button id="noir-toggle">Noir Filter: Off</button>
+    <button id="restart-button">Restart</button>
+    <button id="tweet-button">Tweet Outcome</button>
+    <button id="bluesky-button">Post to Bluesky</button>
+    <button id="fullscreen-button">Full Screen</button>
+  </div>
+
+  <div id="jukebox-controls">
+    <button id="jukebox-play-pause">Play</button>
+    <select id="jukebox-track-select" aria-label="Select jukebox track"></select>
+  </div>
+
+  <audio id="rain-audio" loop></audio>
+  <audio id="jukebox-track"></audio>
+  <audio id="sfx-audio"></audio>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const comicContainer = document.getElementById("comic-container");
+  const panelImage = document.getElementById("panel-image");
+  const narration = document.getElementById("narration");
+  const choicesDiv = document.getElementById("choices");
+  const infoIcon = document.getElementById("info-icon");
+  const infoModal = document.getElementById("info-modal");
+  const infoModalContent = document.getElementById("info-modal-content");
+  const infoModalClose = document.getElementById("info-modal-close");
+  const welcomeModal = document.getElementById("welcome-modal");
+  const playButton = document.getElementById("play-button");
+  const errorModal = document.getElementById("error-modal");
+  const errorModalContent = document.getElementById("error-modal-content");
+  const errorModalClose = document.getElementById("error-modal-close");
+  const rainAudio = document.getElementById("rain-audio");
+  const rainToggle = document.getElementById("rain-toggle");
+  const noirToggle = document.getElementById("noir-toggle");
+  const restartButton = document.getElementById("restart-button");
+  const tweetButton = document.getElementById("tweet-button");
+  const blueskyButton = document.getElementById("bluesky-button");
+  const fullscreenButton = document.getElementById("fullscreen-button");
+  const jukeboxTrack = document.getElementById("jukebox-track");
+  const jukeboxPlayPause = document.getElementById("jukebox-play-pause");
+  const jukeboxTrackSelect = document.getElementById("jukebox-track-select");
+  const sfxAudio = document.getElementById("sfx-audio");
+
+  let story = {};
+  let currentState = "start";
+  let hasInteracted = false;
+  let availableTracks = [];
+  const fallbackImage = "https://via.placeholder.com/800x600?text=Image+Not+Found";
+
+  // Initialize audio
+  rainAudio.src = "assets/rain.mp3";
+  rainAudio.volume = 0.5;
+  jukeboxTrack.volume = 0.5;
+  sfxAudio.volume = 0.5;
+
+  jukeboxTrack.onplay = () => jukeboxPlayPause.textContent = "Pause";
+  jukeboxTrack.onpause = () => jukeboxPlayPause.textContent = "Play";
+  jukeboxTrack.onerror = () => {
+    jukeboxPlayPause.textContent = "Error";
+    showErrorModal("Jukebox track failed to load.");
+  };
+
+  // Validate critical assets
+  async function validateAssets() {
+    const assets = ["assets/story.json", "assets/rain.mp3"];
+    for (const asset of assets) {
+      try {
+        const response = await fetch(asset, { method: "HEAD" });
+        if (!response.ok) throw new Error(`${asset} not found`);
+      } catch (err) {
+        console.error("Asset validation failed:", err);
+        showErrorModal(`Critical asset missing: ${asset}`);
+      }
+    }
+  }
+
+  // Check available jukebox tracks
+  async function checkTracks() {
+    const tracksToCheck = ["track01.mp3", "track02.mp3", "track03.mp3"];
+    for (const trackName of tracksToCheck) {
+      try {
+        const response = await fetch(`assets/${trackName}`, { method: "HEAD" });
+        if (response.ok) {
+          availableTracks.push(trackName);
+          const option = document.createElement("option");
+          option.value = trackName;
+          option.textContent = `Track ${trackName.match(/\d+/)[0].padStart(2, "0")}`;
+          jukeboxTrackSelect.appendChild(option);
+        }
+      } catch (err) {
+        console.log(`Track ${trackName} not found:`, err);
+      }
+    }
+    if (availableTracks.length === 0) {
+      jukeboxPlayPause.style.display = "none";
+      jukeboxTrackSelect.style.display = "none";
+      showErrorModal("No jukebox tracks available.");
+    } else {
+      jukeboxTrack.src = `assets/${availableTracks[0]}`;
+      jukeboxTrack.load();
+    }
+  }
+
+  // Modal functions
+  function showErrorModal(message) {
+    errorModalContent.textContent = message;
+    errorModal.style.display = "block";
+    errorModalClose.focus();
+  }
+
+  function showInfoModal(content) {
+    infoModalContent.textContent = content;
+    infoModal.style.display = "block";
+    infoModalClose.focus();
+  }
+
+  // Event listeners
+  playButton.onclick = async () => {
+    welcomeModal.style.display = "none";
+    hasInteracted = true;
+    if (jukeboxTrack.paused && availableTracks.length > 0) jukeboxTrack.play().catch(console.error);
+    await checkTracks();
+    loadStory();
+  };
+
+  rainToggle.onclick = () => {
+    if (rainAudio.paused) {
+      rainAudio.play().catch(console.error);
+      rainToggle.textContent = "Rain: On";
+    } else {
+      rainAudio.pause();
+      rainToggle.textContent = "Rain: Off";
+    }
+  };
+
+  noirToggle.onclick = () => {
+    panelImage.classList.toggle("noir");
+    noirToggle.textContent = `Noir Filter: ${panelImage.classList.contains("noir") ? "On" : "Off"}`;
+  };
+
+  jukeboxPlayPause.onclick = () => {
+    if (jukeboxTrack.paused) {
+      jukeboxTrack.play().catch(console.error);
+    } else {
+      jukeboxTrack.pause();
+    }
+  };
+
+  jukeboxTrackSelect.onchange = () => {
+    const selectedTrack = jukeboxTrackSelect.value;
+    jukeboxTrack.pause();
+    jukeboxTrack.src = `assets/${selectedTrack}`;
+    jukeboxTrack.load();
+    if (hasInteracted) jukeboxTrack.play().catch(console.error);
+  };
+
+  infoIcon.onclick = () => {
+    if (welcomeModal.style.display === "block" || infoIcon.classList.contains("info-icon-disabled")) return;
+    const current = story[currentState];
+    showInfoModal(current && current.info ? current.info : "No additional information available.");
+  };
+
+  infoModalClose.onclick = () => infoModal.style.display = "none";
+  errorModalClose.onclick = () => errorModal.style.display = "none";
+
+  restartButton.onclick = () => {
+    currentState = "start";
+    loadStory();
+  };
+
+  tweetButton.onclick = () => {
+    const current = story[currentState];
+    const text = current && current.ending ? `I reached ${current.ending} in Neon City!` : "Exploring Neon City!";
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`);
+  };
+
+  blueskyButton.onclick = () => {
+    const current = story[currentState];
+    const text = current && current.ending ? `I reached ${current.ending} in Neon City!` : "Exploring Neon City!";
+    window.open(`https://bsky.app/intent/compose?text=${encodeURIComponent(text)}`);
+  };
+
+  fullscreenButton.onclick = () => {
+    if (!document.fullscreenElement) {
+      comicContainer.requestFullscreen().catch(console.error);
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && infoModal.style.display === "block") infoModal.style.display = "none";
+    if (e.key === "Escape" && errorModal.style.display === "block") errorModal.style.display = "none";
+  });
+
+  // Story functions
+  async function loadStory() {
+    try {
+      const response = await fetch("assets/story.json");
+      if (!response.ok) throw new Error("Story not found");
+      const data = await response.json();
+      validateStory(data);
+      story = data;
+      if (!story[currentState]) currentState = "start";
+      infoIcon.classList.remove("info-icon-disabled");
+      render();
+    } catch (err) {
+      console.error("Failed to load story:", err);
+      story = {
+        start: {
+          text: "An error occurred loading the story.",
+          image: fallbackImage,
+          alt: "Error image",
+          info: "Please check your connection or assets and try again.",
+          choices: [{ text: "Retry", next: "start" }]
+        }
+      };
+      render();
+    }
+  }
+
+  function validateStory(data) {
+    if (!data.start) throw new Error("Story missing 'start' state");
+    for (const state in data) {
+      if (!data[state].text || !data[state].image || !data[state].alt) {
+        console.warn(`State ${state} missing required fields`);
+      }
+    }
+  }
+
+  function render() {
+    try {
+      const current = story[currentState];
+      if (!current) throw new Error(`State ${currentState} not found`);
+      panelImage.src = current.image || fallbackImage;
+      panelImage.alt = current.alt || "Story panel";
+      narration.textContent = current.text || "";
+      choicesDiv.innerHTML = "";
+      if (current.choices && current.choices.length > 0) {
+        current.choices.forEach((choice, index) => {
+          const button = document.createElement("button");
+          button.className = "choice-button";
+          button.textContent = choice.text;
+          button.onclick = () => makeChoice(choice.next);
+          choicesDiv.appendChild(button);
+        });
+      } else if (current.ending) {
+        narration.textContent += ` [${current.ending}]`;
+      }
+      infoIcon.classList.toggle("info-icon-disabled", !current.info);
+      if (infoModal) infoModal.style.display = "none";
+    } catch (err) {
+      console.error("Render error:", err);
+      showErrorModal("An error occurred while rendering the story.");
+    }
+  }
+
+  function makeChoice(nextState) {
+    currentState = nextState;
+    render();
+    if (story[currentState]?.sfx) {
+      sfxAudio.src = `assets/${story[currentState].sfx}`;
+      sfxAudio.play().catch(console.error);
+    }
+  }
+
+  // Initial setup
+  validateAssets();
+});
+</script>
+</body>
+</html>
