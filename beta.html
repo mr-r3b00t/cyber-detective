@@ -118,6 +118,7 @@
       gap: 10px;
       flex-wrap: wrap;
       transition: opacity 0.5s ease-in-out;
+      min-height: 40px; /* Ensure visibility */
     }
 
     .choices button {
@@ -136,7 +137,8 @@
       background: #0ff;
       color: #000;
       box-shadow: 0 0 15px #0ff;
-      outline: 2px solid #0ff;
+      outline: 3px solid #0ff;
+      outline-offset: 2px;
     }
 
     .restart, .tweet, .fullscreen {
@@ -168,21 +170,24 @@
       background: #f00;
       color: #000;
       box-shadow: 0 0 20px #f00;
-      outline: 2px solid #f00;
+      outline: 3px solid #f00;
+      outline-offset: 2px;
     }
 
     .tweet:hover, .tweet:focus {
       background: #0ff;
       color: #000;
       box-shadow: 0 0 20px #0ff;
-      outline: 2px solid #0ff;
+      outline: 3px solid #0ff;
+      outline-offset: 2px;
     }
 
     .fullscreen:hover, .fullscreen:focus {
       background: #fff;
       color: #000;
       box-shadow: 0 0 20px #fff;
-      outline: 2px solid #fff;
+      outline: 3px solid #fff;
+      outline-offset: 2px;
     }
 
     footer {
@@ -269,34 +274,47 @@
     // Control background rain audio volume
     const rainAudio = document.getElementById("background-rain");
     rainAudio.volume = 0.3;
+    rainAudio.onerror = () => {
+      console.error("Failed to load rain audio");
+      document.getElementById("narration").textContent += " (Audio unavailable)";
+    };
 
-    // Full-screen functionality
+    // Full-screen functionality with vendor prefix support
     const fullscreenButton = document.getElementById("fullscreen");
     fullscreenButton.onclick = toggleFullScreen;
 
     function toggleFullScreen() {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().then(() => {
+      const docEl = document.documentElement;
+      const requestFullScreen = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen;
+      if (!requestFullScreen) {
+        console.warn("Fullscreen not supported");
+        fullscreenButton.disabled = true;
+        fullscreenButton.textContent = "Full Screen Unavailable";
+        return;
+      }
+      if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
+        requestFullScreen.call(docEl).then(() => {
           fullscreenButton.textContent = "Exit Full Screen";
-        }).catch(err => {
-          console.error("Error entering full-screen mode:", err);
-        });
+        }).catch(err => console.error("Error entering full-screen mode:", err));
       } else {
-        document.exitFullscreen().then(() => {
+        const exitFullScreen = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+        exitFullScreen.call(document).then(() => {
           fullscreenButton.textContent = "Enter Full Screen";
-        }).catch(err => {
-          console.error("Error exiting full-screen mode:", err);
-        });
+        }).catch(err => console.error("Error exiting full-screen mode:", err));
       }
     }
 
-    // Update button text when full-screen state changes
-    document.addEventListener("fullscreenchange", () => {
-      fullscreenButton.textContent = document.fullscreenElement ? "Exit Full Screen" : "Enter Full Screen";
+    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(event => {
+      document.addEventListener(event, () => {
+        fullscreenButton.textContent = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement
+          ? "Exit Full Screen"
+          : "Enter Full Screen";
+      });
     });
 
     // Load story with improved error handling
     function loadStory(retries = 3) {
+      console.log(`Loading story, retries left: ${retries}, currentState: ${currentState}`);
       fetch('assets/story.json')
         .then(response => {
           if (!response.ok) {
@@ -305,15 +323,21 @@
           return response.json();
         })
         .then(data => {
+          console.log("Story loaded:", data);
           story = data;
           if (!story[currentState]) {
+            console.warn(`State ${currentState} not found, resetting to start`);
             currentState = "start";
-            localStorage.setItem("currentState", currentState);
+            try {
+              localStorage.setItem("currentState", currentState);
+            } catch (e) {
+              console.warn("localStorage unavailable:", e);
+            }
           }
           render();
         })
         .catch(error => {
-          console.error(`Error loading story (retries left: ${retries}):`, error);
+          console.error(`Error loading story: ${error.message}`);
           let userMessage = "Failed to load story. Please try again.";
           if (error.message.includes("404")) {
             userMessage = "Story file not found. Contact the administrator.";
@@ -324,21 +348,24 @@
           }
 
           if (retries > 0 && !error.message.includes("404") && !error.message.includes("Unexpected token")) {
-            setTimeout(() => loadStory(retries - 1), 2000);
+            setTimeout(() => loadStory(retries - 1), 2000 + Math.random() * 100);
           } else {
             document.getElementById("narration").textContent = userMessage;
             const retryButton = document.createElement("button");
             retryButton.textContent = "Retry";
             retryButton.className = "restart";
+            retryButton.setAttribute("aria-label", "Retry loading story");
             retryButton.onclick = () => loadStory(3);
             document.getElementById("choices").appendChild(retryButton);
             story = {
               start: {
                 text: "Error: Story failed to load. You’re in Neon City, but the case is cold. Try again?",
                 image: "assets/fallback.jpg",
+                alt: "Error placeholder",
                 choices: [{ text: "Retry", next: "start" }]
               }
             };
+            console.log("Using fallback story:", story);
             render();
           }
         });
@@ -352,30 +379,38 @@
       const panelImage = document.getElementById("panel-image");
       const restartButton = document.getElementById("restart");
       const tweetButton = document.getElementById("tweet");
-
-      const current = story[currentState];
-      if (!current) {
-        narration.textContent = "Error: Story state not found.";
-        panelImage.src = fallbackImage;
-        panelImage.alt = "Error placeholder";
+      if (!panel || !narration || !ending || !choicesDiv || !panelImage) {
+        console.error("Required DOM elements missing");
         return;
       }
 
+      const current = story[currentState];
+      if (!current) {
+        console.error(`No story state found for ${currentState}`);
+        narration.textContent = "Error: Story state not found.";
+        panelImage.src = fallbackImage;
+        panelImage.alt = "Error placeholder";
+        choicesDiv.innerHTML = "";
+        return;
+      }
+
+      console.log(`Rendering state: ${currentState}`, current);
+
       panel.style.opacity = 0;
- >       choicesDiv.style.opacity = 0;
+      choicesDiv.style.opacity = 0;
       setTimeout(() => {
         panel.style.opacity = 1;
         choicesDiv.style.opacity = 1;
       }, 100);
 
-      narration.textContent = current.text;
+      narration.textContent = current.text || "No narration available.";
       panelImage.src = current.image || fallbackImage;
-      panelImage.alt = current.text.slice(0, 100) + "...";
+      panelImage.alt = current.alt || `Cyber-noir comic scene: ${current.text?.slice(0, 50) || "Unknown"}...`;
       panelImage.onerror = () => { panelImage.src = fallbackImage; };
       ending.textContent = current.ending || "";
       choicesDiv.innerHTML = "";
 
-      if (current.choices.length === 0) {
+      if (current.choices?.length === 0) {
         restartButton.style.display = "block";
         tweetButton.style.display = "block";
       } else {
@@ -383,10 +418,16 @@
         tweetButton.style.display = "none";
       }
 
-      const choices = current.choices || [];
+      const choices = Array.isArray(current.choices) ? current.choices : [];
+      console.log(`Choices for ${currentState}:`, choices);
       choices.forEach(choice => {
+        if (!choice.text || !choice.next) {
+          console.warn("Invalid choice:", choice);
+          return;
+        }
         const button = document.createElement("button");
         button.textContent = choice.text;
+        button.setAttribute("aria-label", `Progress story: ${choice.text}`);
         button.onclick = () => makeChoice(choice.next);
         choicesDiv.appendChild(button);
       });
@@ -394,19 +435,33 @@
 
     function makeChoice(nextState) {
       if (currentState !== nextState) {
+        console.log(`Transitioning from ${currentState} to ${nextState}`);
         currentState = nextState;
-        localStorage.setItem("currentState", currentState);
+        try {
+          localStorage.setItem("currentState", currentState);
+        } catch (e) {
+          console.warn("localStorage unavailable:", e);
+        }
         render();
       }
     }
 
     function restart() {
+      console.log("Restarting story");
       currentState = "start";
-      localStorage.setItem("currentState", currentState);
+      try {
+        localStorage.setItem("currentState", currentState);
+      } catch (e) {
+        console.warn("localStorage unavailable:", e);
+      }
       render();
     }
 
     function tweetOutcome() {
+      if (!story[currentState]) {
+        console.error("No story state for tweet");
+        return;
+      }
       const current = story[currentState];
       let message = "";
       const successEndings = ["lessons_internal_report", "lessons_external_report", "lessons_internal_warn", "lessons_external_warn"];
@@ -422,12 +477,22 @@
         message = `Failed the case in Neon City as Riley Voss. The hackers won, and I'm disgraced. 😔 Try Cyber Noir Detective: ${link} #CyberNoirDetective #Cyberpunk`;
       }
 
-      const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
+      const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(message)}`;
       window.open(tweetUrl, '_blank');
     }
 
     document.getElementById("restart").onclick = restart;
     document.getElementById("tweet").onclick = tweetOutcome;
+
+    // Handle audio autoplay restrictions
+    rainAudio.play().catch(() => {
+      const playButton = document.createElement("button");
+      playButton.textContent = "Play Background Rain";
+      playButton.className = "fullscreen";
+      playButton.setAttribute("aria-label", "Play background rain audio");
+      playButton.onclick = () => rainAudio.play();
+      document.querySelector(".comic-container").appendChild(playButton);
+    });
 
     loadStory();
   </script>
