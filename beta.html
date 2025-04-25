@@ -118,7 +118,7 @@
       gap: 10px;
       flex-wrap: wrap;
       transition: opacity 0.5s ease-in-out;
-      min-height: 40px; /* Ensure visibility */
+      min-height: 40px;
     }
 
     .choices button {
@@ -141,7 +141,7 @@
       outline-offset: 2px;
     }
 
-    .restart, .tweet, .fullscreen {
+    .restart, .tweet, .fullscreen, .music-control {
       background: #000;
       color: #f00;
       border: 2px solid #f00;
@@ -160,7 +160,7 @@
       box-shadow: 0 0 10px #0ff;
     }
 
-    .fullscreen {
+    .fullscreen, .music-control {
       color: #fff;
       border-color: #fff;
       box-shadow: 0 0 10px #fff;
@@ -182,7 +182,7 @@
       outline-offset: 2px;
     }
 
-    .fullscreen:hover, .fullscreen:focus {
+    .fullscreen:hover, .fullscreen:focus, .music-control:hover, .music-control:focus {
       background: #fff;
       color: #000;
       box-shadow: 0 0 20px #fff;
@@ -211,6 +211,51 @@
       color: #fff;
     }
 
+    /* Full-screen styles */
+    :fullscreen .comic-container,
+    :-webkit-full-screen .comic-container,
+    :-moz-full-screen .comic-container {
+      max-width: 90vw;
+      padding: 10px;
+    }
+
+    :fullscreen .panel,
+    :-webkit-full-screen .panel,
+    :-moz-full-screen .panel {
+      max-width: 90vw;
+      max-height: 70vh;
+      aspect-ratio: auto;
+      transform: none;
+      margin-bottom: 20px;
+    }
+
+    :fullscreen .narration,
+    :-webkit-full-screen .narration,
+    :-moz-full-screen .narration {
+      font-size: 1.5em;
+      padding: 15px;
+    }
+
+    :fullscreen .choices,
+    :-webkit-full-screen .choices,
+    :-moz-full-screen .choices {
+      min-height: 60px;
+    }
+
+    :fullscreen .choices button,
+    :-webkit-full-screen .choices button,
+    :-moz-full-screen .choices button {
+      font-size: 1.2em;
+      padding: 12px 24px;
+    }
+
+    :fullscreen .restart, :fullscreen .tweet, :fullscreen .fullscreen, :fullscreen .music-control,
+    :-webkit-full-screen .restart, :-webkit-full-screen .tweet, :-webkit-full-screen .fullscreen, :-webkit-full-screen .music-control,
+    :-moz-full-screen .restart, :-moz-full-screen .tweet, :-moz-full-screen .fullscreen, :-moz-full-screen .music-control {
+      font-size: 1.2em;
+      padding: 12px 24px;
+    }
+
     @media (max-width: 600px) {
       .comic-container {
         padding: 10px;
@@ -234,7 +279,7 @@
         font-size: 1.1em;
       }
 
-      .restart, .tweet, .fullscreen {
+      .restart, .tweet, .fullscreen, .music-control {
         padding: 8px 16px;
         font-size: 0.9em;
       }
@@ -257,6 +302,7 @@
     <button class="restart" id="restart" style="display: none;">Restart Case</button>
     <button class="tweet" id="tweet" style="display: none;">Tweet Your Outcome</button>
     <button class="fullscreen" id="fullscreen">Enter Full Screen</button>
+    <button class="music-control" id="music-control">Pause Rain Audio</button>
   </div>
   <audio id="background-rain" autoplay loop>
     <source src="assets/rain.mp3" type="audio/mpeg">
@@ -271,15 +317,40 @@
     let currentState = localStorage.getItem("currentState") || "start";
     const fallbackImage = "assets/fallback.jpg";
 
-    // Control background rain audio volume
+    // Audio control
     const rainAudio = document.getElementById("background-rain");
     rainAudio.volume = 0.3;
+    const musicControlButton = document.getElementById("music-control");
     rainAudio.onerror = () => {
       console.error("Failed to load rain audio");
       document.getElementById("narration").textContent += " (Audio unavailable)";
+      musicControlButton.textContent = "Play Rain Audio";
+      musicControlButton.disabled = true;
     };
 
-    // Full-screen functionality with vendor prefix support
+    function updateMusicControl() {
+      musicControlButton.textContent = rainAudio.paused ? "Play Rain Audio" : "Pause Rain Audio";
+      musicControlButton.setAttribute("aria-label", rainAudio.paused ? "Play background rain audio" : "Pause background rain audio");
+    }
+
+    musicControlButton.onclick = () => {
+      if (rainAudio.paused) {
+        rainAudio.play().catch(err => console.error("Audio play failed:", err));
+      } else {
+        rainAudio.pause();
+      }
+      updateMusicControl();
+    };
+
+    rainAudio.onplay = updateMusicControl;
+    rainAudio.onpause = updateMusicControl;
+
+    // Handle audio autoplay restrictions
+    rainAudio.play().catch(() => {
+      updateMusicControl();
+    });
+
+    // Full-screen functionality
     const fullscreenButton = document.getElementById("fullscreen");
     fullscreenButton.onclick = toggleFullScreen;
 
@@ -312,7 +383,7 @@
       });
     });
 
-    // Load story with improved error handling
+    // Load story
     function loadStory(retries = 3) {
       console.log(`Loading story, retries left: ${retries}, currentState: ${currentState}`);
       fetch('assets/story.json')
@@ -323,7 +394,7 @@
           return response.json();
         })
         .then(data => {
-          console.log("Story loaded:", data);
+          console.log("Story loaded Mathematics:", data);
           story = data;
           if (!story[currentState]) {
             console.warn(`State ${currentState} not found, resetting to start`);
@@ -483,16 +554,6 @@
 
     document.getElementById("restart").onclick = restart;
     document.getElementById("tweet").onclick = tweetOutcome;
-
-    // Handle audio autoplay restrictions
-    rainAudio.play().catch(() => {
-      const playButton = document.createElement("button");
-      playButton.textContent = "Play Background Rain";
-      playButton.className = "fullscreen";
-      playButton.setAttribute("aria-label", "Play background rain audio");
-      playButton.onclick = () => rainAudio.play();
-      document.querySelector(".comic-container").appendChild(playButton);
-    });
 
     loadStory();
   </script>
