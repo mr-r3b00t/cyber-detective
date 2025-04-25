@@ -100,6 +100,11 @@
       animation: glitchFlicker 10s infinite;
     }
 
+    .panel img.noir-filter {
+      filter: grayscale(100%);
+      animation: none;
+    }
+
     .panel::before {
       content: '';
       position: absolute;
@@ -266,6 +271,41 @@
       color: #0ff;
       font-size: 20px;
       line-height: 1;
+    }
+
+    .noir-toggle {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 255, 255, 0.2);
+      border: 2px solid #0ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+      z-index: 30;
+    }
+
+    .noir-toggle:hover, .noir-toggle:focus {
+      background: rgba(0, 255, 255, 0.5);
+      transform: scale(1.1);
+      box-shadow: 0 0 10px #0ff;
+      outline: none;
+    }
+
+    .noir-toggle svg {
+      width: 24px;
+      height: 24px;
+      fill: #0ff;
+      transition: fill 0.3s;
+    }
+
+    .noir-toggle.noir-active svg {
+      fill: #fff;
     }
 
     .modal {
@@ -462,6 +502,23 @@
       font-size: 24px;
     }
 
+    :fullscreen .noir-toggle,
+    :-webkit-full-screen .noir-toggle,
+    :-moz-full-screen .noir-toggle {
+      top: 10px;
+      left: 10px;
+      width: 48px;
+      height: 48px;
+      z-index: 30;
+    }
+
+    :fullscreen .noir-toggle svg,
+    :-webkit-full-screen .noir-toggle svg,
+    :-moz-full-screen .noir-toggle svg {
+      width: 28px;
+      height: 28px;
+    }
+
     @media (max-width: 600px) {
       .comic-container {
         padding: 5px;
@@ -506,6 +563,16 @@
 
       .audio-control span {
         font-size: 16px;
+      }
+
+      .noir-toggle {
+        width: 32px;
+        height: 32px;
+      }
+
+      .noir-toggle svg {
+        width: 20px;
+        height: 20px;
       }
 
       .modal-content {
@@ -587,6 +654,20 @@
       :-webkit-full-screen .audio-control span,
       :-moz-full-screen .audio-control span {
         font-size: 20px;
+      }
+
+      :fullscreen .noir-toggle,
+      :-webkit-full-screen .noir-toggle,
+      :-moz-full-screen .noir-toggle {
+        width: 40px;
+        height: 40px;
+      }
+
+      :fullscreen .noir-toggle svg,
+      :-webkit-full-screen .noir-toggle svg,
+      :-moz-full-screen .noir-toggle svg {
+        width: 24px;
+        height: 24px;
       }
     }
 
@@ -748,6 +829,11 @@
     <div class="audio-control" id="audio-control" role="button" tabindex="0" aria-label="Pause background audio">
       <span>⏸</span>
     </div>
+    <div class="noir-toggle" id="noir-toggle" role="button" tabindex="0" aria-label="Enable noir filter">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+      </svg>
+    </div>
   </div>
   <audio id="background-rain" autoplay loop>
     <source src="assets/rain.mp3" type="audio/mpeg">
@@ -862,6 +948,25 @@
         rainAudio.play().catch(() => console.log("Still blocked"));
       }, { once: true });
     }
+
+    // Noir filter toggle
+    const noirToggle = document.getElementById("noir-toggle");
+    const panelImage = document.getElementById("panel-image");
+
+    noirToggle.onclick = () => {
+      panelImage.classList.toggle("noir-filter");
+      const isNoirActive = panelImage.classList.contains("noir-filter");
+      noirToggle.setAttribute("aria-label", isNoirActive ? "Disable noir filter" : "Enable noir filter");
+      noirToggle.classList.toggle("noir-active", isNoirActive);
+      hasInteracted = true;
+    };
+
+    noirToggle.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        noirToggle.click();
+      }
+    };
 
     // Full-screen functionality
     const fullscreenButton = document.getElementById("fullscreen");
@@ -1017,9 +1122,11 @@
         narration.classList.remove("transition-in", "glitch");
         choicesDiv.classList.remove("transition-in", "buttons-visible");
         
-        // Reset any filters
+        // Reset any filters (preserve noir-filter if active)
         panel.style.filter = "none";
-        panelImage.style.filter = "none";
+        if (!panelImage.classList.contains("noir-filter")) {
+          panelImage.style.filter = "none";
+        }
 
         // Apply transition out effect only if not first load
         if (!isFirstLoad) {
@@ -1044,10 +1151,12 @@
             choicesDiv.classList.add("transition-in");
           }
 
-          // Clear filter after animation (only if transition was applied)
+          // Clear filter after animation (only if transition was applied, preserve noir-filter)
           setTimeout(() => {
             panel.style.filter = "none";
-            panelImage.style.filter = "none";
+            if (!panelImage.classList.contains("noir-filter")) {
+              panelImage.style.filter = "none";
+            }
             panel.classList.remove("transition-in");
           }, isFirstLoad ? 0 : 800);
 
