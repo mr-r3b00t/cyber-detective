@@ -379,7 +379,7 @@
 
     .noir-toggle {
       position: fixed;
-      top: 60px; /* Adjusted to avoid overlap with jukebox */
+      top: 50px; /* Adjusted to align with jukebox */
       left: 10px;
       width: 40px;
       height: 40px;
@@ -414,7 +414,7 @@
 
     .jukebox-control {
       position: fixed;
-      bottom: 10px;
+      bottom: 50px; /* Moved up to clear footer */
       left: 10px;
       display: flex;
       align-items: center;
@@ -679,7 +679,7 @@
     :fullscreen .noir-toggle,
     :-webkit-full-screen .noir-toggle,
     :-moz-full-screen .noir-toggle {
-      top: 60px;
+      top: 50px;
       left: 10px;
       width: 48px;
       height: 48px;
@@ -696,7 +696,7 @@
     :fullscreen .jukebox-control,
     :-webkit-full-screen .jukebox-control,
     :-moz-full-screen .jukebox-control {
-      bottom: 10px;
+      bottom: 50px;
       left: 10px;
     }
 
@@ -791,7 +791,7 @@
       }
 
       .noir-toggle {
-        top: 50px; /* Adjusted for mobile */
+        top: 40px; /* Adjusted for mobile */
         width: 32px;
         height: 32px;
       }
@@ -799,6 +799,10 @@
       .noir-toggle svg {
         width: 20px;
         height: 20px;
+      }
+
+      .jukebox-control {
+        bottom: 40px; /* Adjusted to clear smaller footer */
       }
 
       .jukebox-control .jukebox-play-pause {
@@ -913,7 +917,7 @@
       :fullscreen .noir-toggle,
       :-webkit-full-screen .noir-toggle,
       :-moz-full-screen .noir-toggle {
-        top: 50px;
+        top: 40px;
         width: 40px;
         height: 40px;
       }
@@ -1809,7 +1813,7 @@
         message = `Failed the case in Neon City as Riley Voss. The hackers won, and I'm disgraced. 😔 Try Cyber Noir Detective: ${link} #CyberNoirDetective #Cyberpunk`;
       }
 
-      const blueskyUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`;
+      const blueskyUrl = `https://bsky.app многословная/intent/compose?text=${encodeURIComponent(message)}`;
       window.open(blueskyUrl, '_blank');
       hasInteracted = true;
     }
