@@ -146,14 +146,6 @@
       cursor: move;
       background: #2a2a2a;
     }
-    .context-menu {
-      position: absolute;
-      background: #1a1a1a;
-      border: 2px solid #00f6ff;
-      border-radius: 4px;
-      padding: 8px;
-      z-index: 1000;
-    }
     #network {
       width: 100%;
       height: 100%;
@@ -225,7 +217,7 @@
       },
     };
 
-    // Convert JSON to vis.js network data
+    // Convert JSON to vis.js network data with edge labels
     const convertToNetworkData = (story, activeNode) => {
       try {
         const nodes = new vis.DataSet();
@@ -251,12 +243,14 @@
             margin: 10,
             widthConstraint: { minimum: 100, maximum: 120 },
           });
-          (node.choices || []).forEach((choice) => {
+          (node.choices || []).forEach((choice, index) => {
             if (choice.next && story[choice.next] && !visited.has(choice.next)) {
               edges.add({
                 from: id,
                 to: choice.next,
+                label: choice.text.slice(0, 30) + (choice.text.length > 30 ? "..." : ""),
                 color: { color: "#ff00ff", highlight: "#ff00ff" },
+                font: { color: "#e0e0e0", face: "Courier New", size: 10, align: "middle" },
                 width: 2,
               });
               addNode(choice.next, depth + 1);
@@ -279,7 +273,6 @@
     const TreeNetwork = ({ story, activeNode, setActiveNode, setStatus }) => {
       const networkRef = useRef(null);
       const containerRef = useRef(null);
-      const [contextMenu, setContextMenu] = useState(null);
 
       useEffect(() => {
         const { nodes, edges } = convertToNetworkData(story, activeNode);
@@ -314,22 +307,6 @@
           if (params.nodes.length > 0) {
             const nodeId = params.nodes[0];
             setActiveNode(nodeId);
-            setContextMenu(null);
-          }
-        });
-
-        // Handle right-click
-        network.on("oncontext", (params) => {
-          params.event.preventDefault();
-          const nodeId = network.getNodeAt(params.pointer.DOM);
-          if (nodeId) {
-            setContextMenu({
-              x: params.pointer.DOM.x,
-              y: params.pointer.DOM.y,
-              nodeId,
-            });
-          } else {
-            setContextMenu(null);
           }
         });
 
@@ -351,32 +328,6 @@
       return (
         <div className="relative">
           <div ref={containerRef} id="network" />
-          {contextMenu && (
-            <div
-              className="context-menu"
-              style={{ left: contextMenu.x, top: contextMenu.y }}
-            >
-              <button
-                className="block w-full text-left p-1 hover:bg-gray-700"
-                onClick={() => {
-                  setActiveNode(contextMenu.nodeId);
-                  setContextMenu(null);
-                }}
-              >
-                Edit Node
-              </button>
-              <button
-                className="block w-full text-left p-1 hover:bg-gray-700"
-                onClick={() => {
-                  setStatus(`Node ${contextMenu.nodeId} deleted`);
-                  // Deletion logic handled in App
-                  setContextMenu(null);
-                }}
-              >
-                Delete Node
-              </button>
-            </div>
-          )}
           <div className="absolute top-2 left-2 flex space-x-2">
             <button
               className="p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700"
@@ -641,6 +592,7 @@
         const file = event.target.files[0];
         if (!file) return;
         setIsLoading(true);
+        setStory(defaultStory); // Clear data before import
         const reader = new FileReader();
         reader.onload = (e) => {
           try {
@@ -651,12 +603,14 @@
             addNotification("JSON imported successfully", "success");
           } catch (error) {
             addNotification("Invalid JSON file: " + error.message, "error");
+            setStory(defaultStory); // Reset to default on error
           } finally {
             setIsLoading(false);
           }
         };
         reader.onerror = () => {
           addNotification("Error reading file", "error");
+          setStory(defaultStory);
           setIsLoading(false);
         };
         reader.readAsText(file);
