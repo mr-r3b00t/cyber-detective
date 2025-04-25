@@ -411,7 +411,7 @@
     let story = {};
     let currentState = localStorage.getItem("currentState") || "start";
     const fallbackImage = "assets/fallback.jpg";
-    let lastPlayedEnding = null; // Prevent multiple outcome sound plays
+    let lastPlayedEnding = null;
 
     // Audio controls
     const rainAudio = document.getElementById("background-rain");
@@ -427,6 +427,7 @@
     };
 
     function playChoiceSound() {
+      console.log("Playing choice sound");
       const sound = new Audio('assets/choice-click.mp3');
       sound.volume = 0.5;
       sound.onerror = () => console.error("Failed to load choice sound");
@@ -434,11 +435,18 @@
     }
 
     function playOutcomeSound(type) {
+      console.log(`Attempting to play ${type} sound`);
       const soundFile = type === "success" ? 'assets/success-sound.mp3' : 'assets/failure-sound.mp3';
       const sound = new Audio(soundFile);
       sound.volume = 0.5;
-      sound.onerror = () => console.error(`Failed to load ${type} sound`);
-      sound.play().catch(err => console.error(`${type} sound play failed:`, err));
+      sound.onerror = () => {
+        console.error(`Failed to load ${type} sound: ${soundFile}`);
+        document.getElementById("narration").textContent += ` (${type} sound unavailable)`;
+      };
+      sound.play().catch(err => {
+        console.error(`${type} sound play failed:`, err);
+        document.getElementById("narration").textContent += ` (${type} sound play failed)`;
+      });
     }
 
     function updateAudioControl() {
@@ -612,13 +620,20 @@
         // Play outcome sound for success or failure endings
         const successEndings = ["lessons_internal_report", "lessons_external_report", "lessons_internal_warn", "lessons_external_warn"];
         const failureEndings = ["fail_internal_lost", "fail_internal_wipe", "fail_internal_disgraced", "fail_external_missed", "fail_external_alienated", "fail_external_disgraced"];
+        console.log(`Checking ending: ${currentState}, Success: ${successEndings.includes(currentState)}, Failure: ${failureEndings.includes(currentState)}`);
         if (currentState !== lastPlayedEnding) {
           if (successEndings.includes(currentState)) {
+            console.log("Triggering success sound");
             playOutcomeSound("success");
           } else if (failureEndings.includes(currentState)) {
+            console.log("Triggering failure sound");
             playOutcomeSound("failure");
+          } else {
+            console.log("No outcome sound for this ending");
           }
           lastPlayedEnding = currentState;
+        } else {
+          console.log("Skipping sound: Ending already played");
         }
       } else {
         restartButton.style.display = "none";
@@ -650,7 +665,7 @@
         } catch (e) {
           console.warn("localStorage unavailable:", e);
         }
-        lastPlayedEnding = null; // Reset for new ending
+        lastPlayedEnding = null;
         render();
       }
     }
@@ -663,7 +678,7 @@
       } catch (e) {
         console.warn("localStorage unavailable:", e);
       }
-      lastPlayedEnding = null; // Reset for new game
+      lastPlayedEnding = null;
       render();
     }
 
