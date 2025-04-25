@@ -331,9 +331,13 @@
         font-size: 1.1em;
       }
 
-      .restart, .tweet, .fullscreen {
+      .restart, .tweet {
         padding: 8px 16px;
         font-size: 0.9em;
+      }
+
+      .fullscreen {
+        display: none; /* Hide full-screen button on mobile */
       }
 
       .audio-control {
@@ -371,9 +375,9 @@
         padding: 8px 16px;
       }
 
-      :fullscreen .restart, :fullscreen .tweet, :fullscreen .fullscreen,
-      :-webkit-full-screen .restart, :-webkit-full-screen .tweet, :-webkit-full-screen .fullscreen,
-      :-moz-full-screen .restart, :-moz-full-screen .tweet, :-moz-full-screen .fullscreen {
+      :fullscreen .restart, :fullscreen .tweet,
+      :-webkit-full-screen .restart, :-webkit-full-screen .tweet,
+      :-moz-full-screen .restart, :-moz-full-screen .tweet {
         font-size: 1em;
         padding: 8px 16px;
       }
