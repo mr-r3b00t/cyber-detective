@@ -68,19 +68,23 @@
     .comic-container {
       display: flex;
       flex-direction: column;
+      justify-content: center;
       align-items: center;
-      padding: 20px;
-      max-width: 1200px;
-      margin: 0 auto;
+      min-height: 100vh;
+      max-height: 100vh;
+      overflow-y: auto;
+      padding: 10px;
+      box-sizing: border-box;
     }
 
     .panel {
-      max-width: 100%;
+      width: 100%;
+      max-width: min(90vw, 800px);
       aspect-ratio: 4 / 3;
       border: 3px solid #fff;
       border-image: linear-gradient(to bottom, #fff, #0ff, #fff) 1;
       box-shadow: 0 0 15px #0ff, 0 0 30px #f0f, inset 0 0 5px #000;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       background: #000;
       position: relative;
       transform: rotate(-1deg);
@@ -115,7 +119,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkilibrioYAAAE3UlEQVR4nO2d25LjIAxFTf7/p7unqvthMhvbgC4IhM+uymMwAnS1DbhcPB6Px+PxeDwej8fj8Xg8Hs/7+AtuA3/2JpiD9QAAAABJRU5ErkJggg==') repeat;
+      background: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAACXBIWXMAAAsTAAALEwEAmpwYAAAE3UlEQVR4nO2d25LjIAxFTf7/p7unqvthMhvbgC4IhM+uymMwAnS1DbhcPB6Px+PxeDwej8fj8Xg8Hs/7+AtuA3/2JpiD9QAAAABJRU5ErkJggg==') repeat;
       background-size: 100px;
       mix-blend-mode: overlay;
       opacity: 0.05;
@@ -141,7 +145,7 @@
       font-size: 1.3em;
       color: #0ff;
       text-align: center;
-      margin: 20px 0;
+      margin: 10px 0;
       text-shadow: 0 0 10px #0ff;
     }
 
@@ -152,6 +156,7 @@
       flex-wrap: wrap;
       transition: opacity 0.5s ease-in-out;
       min-height: 40px;
+      margin-bottom: 10px;
     }
 
     .choices button {
@@ -182,7 +187,7 @@
       padding: 10px 20px;
       cursor: pointer;
       font-size: 1em;
-      margin: 10px auto;
+      margin: 5px auto;
       display: block;
       transition: all 0.3s;
       box-shadow: 0 0 10px #f00;
@@ -225,7 +230,7 @@
     }
 
     .audio-control {
-      position: absolute;
+      position: fixed;
       top: 10px;
       right: 10px;
       width: 40px;
@@ -322,14 +327,15 @@
 
     footer {
       text-align: center;
-      padding: 20px;
-      background: #111;
+      padding: 10px;
+      background: rgba(17, 17, 17, 0.8);
       border-top: 2px solid #0ff;
-      margin-top: 20px;
       font-size: 0.9em;
       color: #fff;
-      position: relative;
+      position: fixed;
+      bottom: 0;
       width: 100%;
+      z-index: 5;
     }
 
     footer a {
@@ -347,17 +353,20 @@
     :-webkit-full-screen .comic-container,
     :-moz-full-screen .comic-container {
       max-width: 100vw;
+      max-height: 100vh;
       padding: 5px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      overflow-y: auto;
     }
 
     :fullscreen .panel,
     :-webkit-full-screen .panel,
     :-moz-full-screen .panel {
       max-width: 95vw;
-      max-height: 85vh;
+      max-height: 70vh;
       width: 100%;
       height: auto;
       transform: none;
@@ -388,7 +397,6 @@
     }
 
     :fullscreen .restart, :fullscreen .tweet, :fullscreen .fullscreen,
- Albuquerque, NM 87102
     :-webkit-full-screen .restart, :-webkit-full-screen .tweet, :-webkit-full-screen .fullscreen,
     :-moz-full-screen .restart, :-moz-full-screen .tweet, :-moz-full-screen .fullscreen {
       font-size: 1.4em;
@@ -413,11 +421,11 @@
 
     @media (max-width: 600px) {
       .comic-container {
-        padding: 10px;
+        padding: 5px;
       }
 
       .panel {
-        max-width: 400px;
+        max-width: 95vw;
       }
 
       .narration {
@@ -472,14 +480,14 @@
 
       footer {
         font-size: 0.8em;
-        padding: 10px;
+        padding: 5px;
       }
 
       :fullscreen .panel,
       :-webkit-full-screen .panel,
       :-moz-full-screen .panel {
         max-width: 98vw;
-        max-height: 80vh;
+        max-height: 65vh;
       }
 
       :fullscreen .narration,
@@ -821,6 +829,7 @@
         .then(data => {
           console.log("Story loaded:", data);
           story = data;
+          // Validate currentState
           if (!story[currentState]) {
             console.warn(`State ${currentState} not found, resetting to start`);
             currentState = "start";
@@ -959,7 +968,7 @@
 
           const choices = Array.isArray(current.choices) ? current.choices : [];
           console.log(`Choices for ${currentState}:`, choices);
-          if (choices.length === 0 && current.choices) {
+          if (choices.length === 0 && current.choices !== undefined && current.choices !== null) {
             console.warn("No valid choices found for state:", currentState, current);
             narration.textContent = "Error: No valid choices available.";
             return;
@@ -990,8 +999,16 @@
 
     function makeChoice(nextState) {
       console.log(`makeChoice called with nextState: ${nextState}`);
-      if (typeof nextState !== 'string' || !nextState) {
-        console.error("Invalid nextState:", nextState);
+      if (typeof nextState !== 'string' || !nextState || !story[nextState]) {
+        console.error(`Invalid or non-existent nextState: ${nextState}`);
+        narration.textContent = "Error: Invalid story path. Resetting to start.";
+        currentState = "start";
+        try {
+          localStorage.setItem("currentState", currentState);
+        } catch (e) {
+          console.warn("localStorage unavailable:", e);
+        }
+        render();
         return;
       }
       if (currentState !== nextState) {
@@ -1111,6 +1128,17 @@
 
     document.getElementById("restart").onclick = restart;
     document.getElementById("tweet").onclick = tweetOutcome;
+
+    // Reset invalid state on load
+    if (!story[currentState]) {
+      console.log("Invalid initial state, resetting to start");
+      currentState = "start";
+      try {
+        localStorage.setItem("currentState", currentState);
+      } catch (e) {
+        console.warn("localStorage unavailable:", e);
+      }
+    }
   </script>
 </body>
 </html>
