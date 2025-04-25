@@ -1,352 +1,838 @@
-<!DOCTYPE html>
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Story Editor - Cyber Noir Detective</title>
-  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+  <title>Neon City Story Editor</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.7/babel.min.js"></script>
+  <script src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      background: #000;
-      color: #fff;
-      font-family: 'Oswald', monospace;
+      font-family: 'Courier New', Courier, monospace;
+      background: linear-gradient(to bottom, #1a1a1a, #2a2a2a);
+      color: #e0e0e0;
       margin: 0;
-      padding: 20px;
-      overflow-x: auto;
+      overflow: hidden;
     }
-
-    .editor-container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
+    .neon-text {
+      text-shadow: 0 0 5px #00f6ff, 0 0 10px #ff00ff;
+    }
+    .tree-container {
       background: #111;
-      border: 2px solid #0ff;
-      box-shadow: 0 0 15px #0ff, 0 0 30px #f0f;
-    }
-
-    h1 {
-      text-align: center;
-      color: #0ff;
-      text-shadow: 0 0 10px #0ff;
-      margin-bottom: 20px;
-    }
-
-    .node-list {
-      margin-bottom: 20px;
-    }
-
-    .node {
-      background: #222;
-      border: 1px solid #0ff;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 0 5px #0ff;
-    }
-
-    .node-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-
-    .node-id {
-      font-size: 1.2em;
-      color: #f0f;
-    }
-
-    .node-content label {
-      display: block;
-      margin: 10px 0 5px;
-      color: #0ff;
-    }
-
-    .node-content input, .node-content textarea {
+      border: 2px solid #00f6ff;
+      box-shadow: 0 0 15px rgba(0, 246, 255, 0.5);
+      height: calc(100vh - 100px);
       width: 100%;
-      background: #333;
-      border: 1px solid #0ff;
-      color: #fff;
+    }
+    .node-container {
+      width: 100%;
+      height: calc(100vh - 100px);
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .error-message {
+      background: #2a0000;
+      border: 2px solid #ff4444;
+      color: #ffcccc;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 16px;
+    }
+    .notification {
+      position: fixed;
+      bottom: 60px;
+      right: 20px;
+      padding: 12px;
+      border-radius: 4px;
+      z-index: 1000;
+      transition: opacity 0.3s ease-in-out;
+      background: #1a3c34;
+      border: 1px solid #00f6ff;
+    }
+    .notification.error {
+      background: #3c1a1a;
+      border: 1px solid #ff4444;
+    }
+    .status-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1a1a1a;
+      border-top: 1px solid #00f6ff;
       padding: 8px;
-      font-family: 'Oswald', monospace;
-      box-sizing: border-box;
+      z-index: 10;
     }
-
-    .node-content textarea {
-      height: 100px;
-      resize: vertical;
+    .node-editor {
+      transition: all 0.3s ease-in-out;
     }
-
-    .choices-list {
-      margin-top: 15px;
+    .node-editor.active {
+      border-color: #ff00ff;
+      box-shadow: 0 0 10px #ff00ff;
     }
-
-    .choice {
-      background: #333;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #f0f;
-    }
-
-    .choice input {
-      margin: 5px 0;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
     button {
-      background: #000;
-      color: #0ff;
-      border: 2px solid #0ff;
+      transition: all 0.2s ease-in-out;
+    }
+    button:hover {
+      box-shadow: 0 0 8px #00f6ff;
+    }
+    .tab-bar {
+      background: #1a1a1a;
+      border-bottom: 2px solid #00f6ff;
+      padding: 8px;
+      display: flex;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .tab {
       padding: 8px 16px;
+      color: #e0e0e0;
       cursor: pointer;
-      font-size: 0.9em;
-      text-transform: uppercase;
-      transition: all 0.3s;
-      box-shadow: 0 0 5px #0ff;
+      transition: all 0.2s ease-in-out;
     }
-
-    button:hover, button:focus {
-      background: #0ff;
-      color: #000;
-      box-shadow: 0 0 15px #0ff;
-      outline: 2px solid #0ff;
+    .tab.active {
+      background: #00f6ff;
+      color: #1a1a1a;
+      font-weight: bold;
     }
-
-    button.delete {
-      color: #f00;
-      border-color: #f00;
-      box-shadow: 0 0 5px #f00;
+    .tab:hover:not(.active) {
+      background: #2a2a2a;
     }
-
-    button.delete:hover, button.delete:focus {
-      background: #f00;
-      color: #000;
-      box-shadow: 0 0 15px #f00;
-      outline: 2px solid #f00;
+    .draggable:hover {
+      cursor: move;
+      background: #2a2a2a;
     }
-
-    .error {
-      color: #f00;
-      text-align: center;
-      margin: 10px 0;
-      text-shadow: 0 0 5px #f00;
+    .context-menu {
+      position: absolute;
+      background: #1a1a1a;
+      border: 2px solid #00f6ff;
+      border-radius: 4px;
+      padding: 8px;
+      z-index: 1000;
     }
-
-    .export-button {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      font-size: 1em;
-    }
-
-    @media (max-width: 600px) {
-      .editor-container {
-        padding: 10px;
-      }
-
-      .node {
-        padding: 10px;
-      }
-
-      .node-content input, .node-content textarea {
-        font-size: 0.9em;
-      }
-
-      button {
-        padding: 6px 12px;
-        font-size: 0.8em;
-      }
+    #network {
+      width: 100%;
+      height: 100%;
     }
   </style>
 </head>
-<body>
-  <div class="editor-container">
-    <h1>Story Editor - Cyber Noir Detective</h1>
-    <div id="error" class="error"></div>
-    <div class="node-list" id="node-list"></div>
-    <button onclick="addNode()">Add New Node</button>
-    <button class="export-button" onclick="exportJson()">Export story.json</button>
-  </div>
+<body class="min-h-screen flex flex-col">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, Component } = React;
 
-  <script>
-    let story = {};
-    let nodeCounter = 0; // For generating unique node IDs
+    // Error Boundary Component
+    class ErrorBoundary extends Component {
+      state = { error: null, errorInfo: null };
 
-    // Load story.json
-    function loadStory() {
-      fetch('assets/story.json')
-        .then(response => {
-          if (!response.ok) throw new Error(`Failed to load story.json: ${response.status} ${response.statusText}`);
-          return response.json();
-        })
-        .then(data => {
-          story = data;
-          nodeCounter = Object.keys(story).length; // Initialize counter
-          renderNodes();
-        })
-        .catch(error => {
-          document.getElementById('error').textContent = `Error loading story: ${error.message}. Please ensure assets/story.json exists.`;
-          console.error('Error loading story:', error);
-        });
-    }
+      componentDidCatch(error, errorInfo) {
+        this.setState({ error, errorInfo });
+        console.error("Error caught in boundary:", error, errorInfo);
+      }
 
-    // Render all nodes
-    function renderNodes() {
-      const nodeList = document.getElementById('node-list');
-      nodeList.innerHTML = '';
-      Object.keys(story).forEach(nodeId => {
-        const node = story[nodeId];
-        const nodeDiv = document.createElement('div');
-        nodeDiv.className = 'node';
-        nodeDiv.innerHTML = `
-          <div class="node-header">
-            <span class="node-id">Node ID: <input type="text" value="${nodeId}" onchange="updateNodeId('${nodeId}', this.value)"></span>
-            <button class="delete" onclick="deleteNode('${nodeId}')">Delete Node</button>
-          </div>
-          <div class="node-content">
-            <label>Text</label>
-            <textarea onchange="updateNode('${nodeId}', 'text', this.value)">${node.text || ''}</textarea>
-            <label>Image</label>
-            <input type="text" value="${node.image || ''}" onchange="updateNode('${nodeId}', 'image', this.value)">
-            <label>Ending (optional)</label>
-            <input type="text" value="${node.ending || ''}" onchange="updateNode('${nodeId}', 'ending', this.value)">
-            <div class="choices-list" id="choices-${nodeId}">
-              <label>Choices</label>
+      render() {
+        if (this.state.error) {
+          return (
+            <div className="error-message">
+              <h2 className="text-xl font-bold">Something went wrong.</h2>
+              <p>{this.state.error?.toString() || "Unknown error"}</p>
+              <pre>{this.state.errorInfo?.componentStack || "No stack trace available"}</pre>
+              <button
+                className="p-2 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+                onClick={() => this.setState({ error: null, errorInfo: null })}
+              >
+                Try Again
+              </button>
             </div>
-            <div class="button-group">
-              <button onclick="addChoice('${nodeId}')">Add Choice</button>
-            </div>
-          </div>
-        `;
-        nodeList.appendChild(nodeDiv);
-        renderChoices(nodeId);
-      });
-    }
-
-    // Render choices for a node
-    function renderChoices(nodeId) {
-      const choicesList = document.getElementById(`choices-${nodeId}`);
-      const choices = story[nodeId].choices || [];
-      choicesList.innerHTML = '<label>Choices</label>';
-      choices.forEach((choice, index) => {
-        const choiceDiv = document.createElement('div');
-        choiceDiv.className = 'choice';
-        choiceDiv.innerHTML = `
-          <input type="text" value="${choice.text || ''}" placeholder="Choice Text" onchange="updateChoice('${nodeId}', ${index}, 'text', this.value)">
-          <input type="text" value="${choice.next || ''}" placeholder="Next Node ID" onchange="updateChoice('${nodeId}', ${index}, 'next', this.value)">
-          <button class="delete" onclick="deleteChoice('${nodeId}', ${index})">Delete Choice</button>
-        `;
-        choicesList.appendChild(choiceDiv);
-      });
-    }
-
-    // Update node field
-    function updateNode(nodeId, field, value) {
-      story[nodeId][field] = value;
-      if (field === 'ending' && !value) {
-        delete story[nodeId].ending; // Remove empty ending
-      }
-    }
-
-    // Update node ID
-    function updateNodeId(oldId, newId) {
-      if (newId && newId !== oldId && !story[newId]) {
-        // Update references in choices
-        Object.values(story).forEach(node => {
-          if (node.choices) {
-            node.choices.forEach(choice => {
-              if (choice.next === oldId) {
-                choice.next = newId;
-              }
-            });
-          }
-        });
-        // Rename node
-        story[newId] = { ...story[oldId] };
-        delete story[oldId];
-        renderNodes();
-      } else {
-        alert('Invalid or duplicate Node ID.');
-        renderNodes(); // Revert invalid change
-      }
-    }
-
-    // Update choice field
-    function updateChoice(nodeId, index, field, value) {
-      if (!story[nodeId].choices) story[nodeId].choices = [];
-      story[nodeId].choices[index][field] = value;
-    }
-
-    // Add new node
-    function addNode() {
-      const newId = `node_${nodeCounter++}`;
-      story[newId] = {
-        text: '',
-        image: 'assets/panel.jpg',
-        choices: []
-      };
-      renderNodes();
-    }
-
-    // Delete node
-    function deleteNode(nodeId) {
-      // Check if node is referenced
-      const isReferenced = Object.values(story).some(node =>
-        node.choices && node.choices.some(choice => choice.next === nodeId)
-      );
-      if (isReferenced) {
-        alert('Cannot delete node: It is referenced by another node’s choice.');
-        return;
-      }
-      if (confirm(`Delete node "${nodeId}"?`)) {
-        delete story[nodeId];
-        renderNodes();
-      }
-    }
-
-    // Add choice to node
-    function addChoice(nodeId) {
-      if (!story[nodeId].choices) story[nodeId].choices = [];
-      story[nodeId].choices.push({ text: '', next: '' });
-      renderChoices(nodeId);
-    }
-
-    // Delete choice
-    function deleteChoice(nodeId, index) {
-      if (confirm('Delete this choice?')) {
-        story[nodeId].choices.splice(index, 1);
-        renderChoices(nodeId);
-      }
-    }
-
-    // Export story.json
-    function exportJson() {
-      // Validate choices
-      for (const nodeId in story) {
-        const choices = story[nodeId].choices || [];
-        for (const choice of choices) {
-          if (choice.next && !story[choice.next]) {
-            alert(`Invalid choice in "${nodeId}": Next node "${choice.next}" does not exist.`);
-            return;
-          }
+          );
         }
+        return this.props.children;
       }
-      const json = JSON.stringify(story, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'story.json';
-      a.click();
-      URL.revokeObjectURL(url);
     }
 
-    // Initialize
-    loadStory();
+    // Notification Component
+    const Notification = ({ message, type, onClose, onUndo }) => {
+      useEffect(() => {
+        const timer = setTimeout(onClose, 5000);
+        return () => clearTimeout(timer);
+      }, [onClose]);
+
+      return (
+        <div className={`notification ${type}`}>
+          <p>{message}</p>
+          {onUndo && (
+            <button
+              className="ml-2 text-cyan-400 hover:text-cyan-200"
+              onClick={onUndo}
+            >
+              Undo
+            </button>
+          )}
+        </div>
+      );
+    };
+
+    const defaultStory = {
+      start: {
+        text: "Neon City’s rain never stops. Detective Riley Voss nurses a whiskey in their office.",
+        image: "assets/panel1.jpg",
+        alt: "Neon City detective office scene",
+        choices: [],
+      },
+    };
+
+    // Convert JSON to vis.js network data
+    const convertToNetworkData = (story, activeNode) => {
+      try {
+        const nodes = new vis.DataSet();
+        const edges = new vis.DataSet();
+        const visited = new Set();
+
+        const addNode = (id, depth = 0) => {
+          if (visited.has(id)) return;
+          visited.add(id);
+          const node = story[id];
+          if (!node) return;
+          nodes.add({
+            id,
+            label: id,
+            title: node.text.slice(0, 50) + (node.text.length > 50 ? "..." : ""),
+            shape: "box",
+            color: {
+              background: "#1a1a1a",
+              border: id === activeNode ? "#ff00ff" : "#00f6ff",
+              highlight: { background: "#1a1a1a", border: "#ff00ff" },
+            },
+            font: { color: "#e0e0e0", face: "Courier New", size: 12 },
+            margin: 10,
+            widthConstraint: { minimum: 100, maximum: 120 },
+          });
+          (node.choices || []).forEach((choice) => {
+            if (choice.next && story[choice.next] && !visited.has(choice.next)) {
+              edges.add({
+                from: id,
+                to: choice.next,
+                color: { color: "#ff00ff", highlight: "#ff00ff" },
+                width: 2,
+              });
+              addNode(choice.next, depth + 1);
+            }
+          });
+        };
+
+        addNode("start");
+        return { nodes, edges };
+      } catch (error) {
+        console.error("Error in convertToNetworkData:", error);
+        return {
+          nodes: new vis.DataSet([{ id: "start", label: "start", shape: "box", color: { background: "#1a1a1a", border: "#00f6ff" }, font: { color: "#e0e0e0" } }]),
+          edges: new vis.DataSet([]),
+        };
+      }
+    };
+
+    // vis.js network renderer
+    const TreeNetwork = ({ story, activeNode, setActiveNode, setStatus }) => {
+      const networkRef = useRef(null);
+      const containerRef = useRef(null);
+      const [contextMenu, setContextMenu] = useState(null);
+
+      useEffect(() => {
+        const { nodes, edges } = convertToNetworkData(story, activeNode);
+        const data = { nodes, edges };
+        const options = {
+          layout: {
+            hierarchical: {
+              direction: "UD",
+              sortMethod: "directed",
+              levelSeparation: 150,
+              nodeSpacing: 200,
+              treeSpacing: 200,
+            },
+          },
+          interaction: {
+            hover: true,
+            zoomView: true,
+            dragView: true,
+            selectable: true,
+          },
+          physics: { enabled: false },
+          edges: {
+            smooth: { type: "continuous" },
+          },
+        };
+
+        const network = new vis.Network(containerRef.current, data, options);
+        networkRef.current = network;
+
+        // Handle click
+        network.on("click", (params) => {
+          if (params.nodes.length > 0) {
+            const nodeId = params.nodes[0];
+            setActiveNode(nodeId);
+            setContextMenu(null);
+          }
+        });
+
+        // Handle right-click
+        network.on("oncontext", (params) => {
+          params.event.preventDefault();
+          const nodeId = network.getNodeAt(params.pointer.DOM);
+          if (nodeId) {
+            setContextMenu({
+              x: params.pointer.DOM.x,
+              y: params.pointer.DOM.y,
+              nodeId,
+            });
+          } else {
+            setContextMenu(null);
+          }
+        });
+
+        // Handle hover
+        network.on("hoverNode", () => {
+          network.canvas.body.container.style.cursor = "pointer";
+        });
+
+        network.on("blurNode", () => {
+          network.canvas.body.container.style.cursor = "default";
+        });
+
+        // Clean up
+        return () => {
+          network.destroy();
+        };
+      }, [story, activeNode, setActiveNode]);
+
+      return (
+        <div className="relative">
+          <div ref={containerRef} id="network" />
+          {contextMenu && (
+            <div
+              className="context-menu"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+            >
+              <button
+                className="block w-full text-left p-1 hover:bg-gray-700"
+                onClick={() => {
+                  setActiveNode(contextMenu.nodeId);
+                  setContextMenu(null);
+                }}
+              >
+                Edit Node
+              </button>
+              <button
+                className="block w-full text-left p-1 hover:bg-gray-700"
+                onClick={() => {
+                  setStatus(`Node ${contextMenu.nodeId} deleted`);
+                  // Deletion logic handled in App
+                  setContextMenu(null);
+                }}
+              >
+                Delete Node
+              </button>
+            </div>
+          )}
+          <div className="absolute top-2 left-2 flex space-x-2">
+            <button
+              className="p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+              onClick={() => networkRef.current?.zoom(0.1)}
+              aria-label="Zoom in"
+            >
+              Zoom In
+            </button>
+            <button
+              className="p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+              onClick={() => networkRef.current?.zoom(-0.1)}
+              aria-label="Zoom out"
+            >
+              Zoom Out
+            </button>
+            <button
+              className="p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+              onClick={() => networkRef.current?.fit()}
+              aria-label="Reset view"
+            >
+              Reset View
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    const NodeEditor = ({ nodeId, node, updateNode, deleteNode, addChoice, story, isActive, onDragStart, onDrop }) => {
+      const [isCollapsed, setIsCollapsed] = useState(false);
+
+      const handleChange = (field, value) => {
+        updateNode(nodeId, { ...node, [field]: value });
+      };
+
+      const handleChoiceChange = (index, field, value) => {
+        const newChoices = [...node.choices];
+        newChoices[index] = { ...newChoices[index], [field]: value };
+        updateNode(nodeId, { ...node, choices: newChoices });
+      };
+
+      const removeChoice = (index) => {
+        const newChoices = node.choices.filter((_, i) => i !== index);
+        updateNode(nodeId, { ...node, choices: newChoices });
+      };
+
+      return (
+        <div
+          id={`node-${nodeId}`}
+          className={`node-editor bg-gray-900 p-4 rounded-lg shadow-lg border ${isActive ? "active" : "border-cyan-500"} animate-fade-in mb-4`}
+        >
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-bold text-cyan-400">{nodeId}</h3>
+            <button
+              className="p-1 text-gray-400 hover:text-gray-200"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              aria-label={isCollapsed ? `Expand node ${nodeId}` : `Collapse node ${nodeId}`}
+            >
+              {isCollapsed ? "Expand" : "Collapse"}
+            </button>
+          </div>
+          {!isCollapsed && (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm text-gray-300">Text</label>
+                <textarea
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  value={node.text || ""}
+                  onChange={(e) => handleChange("text", e.target.value)}
+                  aria-label={`Text for node ${nodeId}`}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm text-gray-300">Image</label>
+                <input
+                  type="text"
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  value={node.image || ""}
+                  onChange={(e) => handleChange("image", e.target.value)}
+                  aria-label={`Image path for node ${nodeId}`}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm text-gray-300">Alt Text</label>
+                <input
+                  type="text"
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  value={node.alt || ""}
+                  onChange={(e) => handleChange("alt", e.target.value)}
+                  aria-label={`Alt text for node ${nodeId}`}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm text-gray-300">Info (Optional)</label>
+                <textarea
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  value={node.info || ""}
+                  onChange={(e) => handleChange("info", e.target.value)}
+                  aria-label={`Info for node ${nodeId}`}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm text-gray-300">Ending (Optional)</label>
+                <textarea
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  value={node.ending || ""}
+                  onChange={(e) => handleChange("ending", e.target.value)}
+                  aria-label={`Ending for node ${nodeId}`}
+                />
+              </div>
+              <div className="mb-4">
+                <h4 className="text-sm font-bold text-gray-300">Choices</h4>
+                {(node.choices || []).map((choice, index) => (
+                  <div
+                    key={index}
+                    className="flex space-x-2 mb-2 draggable"
+                    draggable
+                    onDragStart={(e) => onDragStart(e, index)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => onDrop(e, index)}
+                  >
+                    <input
+                      type="text"
+                      className="flex-1 p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                      placeholder="Choice Text"
+                      value={choice.text || ""}
+                      onChange={(e) => handleChoiceChange(index, "text", e.target.value)}
+                      aria-label={`Choice text ${index + 1} for node ${nodeId}`}
+                    />
+                    <select
+                      className="p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                      value={choice.next || ""}
+                      onChange={(e) => handleChoiceChange(index, "next", e.target.value)}
+                      aria-label={`Next node for choice ${index + 1} in node ${nodeId}`}
+                    >
+                      <option value="">Select Next Node</option>
+                      {Object.keys(story).map((id) => (
+                        <option key={id} value={id}>{id}</option>
+                      ))}
+                    </select>
+                    <button
+                      className="p-2 bg-red-600 text-white rounded hover:bg-red-700"
+                      onClick={() => removeChoice(index)}
+                      aria-label={`Remove choice ${index + 1} from node ${nodeId}`}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button
+                  className="mt-2 p-2 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+                  onClick={() => addChoice(nodeId)}
+                  aria-label={`Add choice to node ${nodeId}`}
+                >
+                  Add Choice
+                </button>
+              </div>
+              <button
+                className="p-2 bg-red-600 text-white rounded hover:bg-red-700"
+                onClick={() => deleteNode(nodeId)}
+                aria-label={`Delete node ${nodeId}`}
+              >
+                Delete Node
+              </button>
+            </>
+          )}
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [story, setStory] = useState(defaultStory);
+      const [activeNode, setActiveNode] = useState(null);
+      const [notifications, setNotifications] = useState([]);
+      const [newNodeId, setNewNodeId] = useState("");
+      const [newNodeError, setNewNodeError] = useState("");
+      const [isLoading, setIsLoading] = useState(false);
+      const [searchQuery, setSearchQuery] = useState("");
+      const [status, setStatus] = useState("Ready");
+      const [activeTab, setActiveTab] = useState("nodes");
+      const fileInputRef = useRef(null);
+
+      useEffect(() => {
+        const handleKeydown = (e) => {
+          if (e.ctrlKey && e.key === "s") {
+            e.preventDefault();
+            handleExport();
+          } else if (e.ctrlKey && e.key === "n") {
+            e.preventDefault();
+            setNewNodeId("");
+            setNewNodeError("");
+            document.getElementById("new-node-input")?.focus();
+          }
+        };
+        window.addEventListener("keydown", handleKeydown);
+        return () => window.removeEventListener("keydown", handleKeydown);
+      }, []);
+
+      const addNotification = (message, type, onUndo) => {
+        const id = Date.now();
+        setNotifications((prev) => [...prev, { id, message, type, onUndo }]);
+        setTimeout(() => {
+          setNotifications((prev) => prev.filter((n) => n.id !== id));
+        }, 5000);
+      };
+
+      const addNode = () => {
+        if (!newNodeId) {
+          setNewNodeError("Node ID is required");
+          return;
+        }
+        if (story[newNodeId]) {
+          setNewNodeError("Node ID already exists");
+          return;
+        }
+        setStory({
+          ...story,
+          [newNodeId]: {
+            text: "",
+            image: "",
+            alt: "",
+            choices: [],
+          },
+        });
+        setNewNodeId("");
+        setNewNodeError("");
+        setStatus(`Added node ${newNodeId}`);
+        addNotification(`Node ${newNodeId} added`, "success");
+      };
+
+      const updateNode = (nodeId, updatedNode) => {
+        setStory({ ...story, [nodeId]: updatedNode });
+        setStatus(`Updated node ${nodeId}`);
+      };
+
+      const deleteNode = (nodeId) => {
+        if (nodeId === "start") {
+          addNotification("Cannot delete the start node", "error");
+          return;
+        }
+        const prevStory = { ...story };
+        const newStory = { ...story };
+        delete newStory[nodeId];
+        Object.keys(newStory).forEach((id) => {
+          newStory[id].choices = (newStory[id].choices || []).filter((choice) => choice.next !== nodeId);
+        });
+        setStory(newStory);
+        if (activeNode === nodeId) setActiveNode(null);
+        setStatus(`Deleted node ${nodeId}`);
+        addNotification(`Node ${nodeId} deleted`, "success", () => setStory(prevStory));
+      };
+
+      const addChoice = (nodeId) => {
+        const newChoices = [
+          ...(story[nodeId].choices || []),
+          { text: "", next: "" },
+        ];
+        updateNode(nodeId, { ...story[nodeId], choices: newChoices });
+        setStatus(`Added choice to node ${nodeId}`);
+      };
+
+      const handleImport = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        setIsLoading(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const importedStory = JSON.parse(e.target.result);
+            setStory(importedStory);
+            setActiveNode(null);
+            setStatus(`Imported JSON with ${Object.keys(importedStory).length} nodes`);
+            addNotification("JSON imported successfully", "success");
+          } catch (error) {
+            addNotification("Invalid JSON file: " + error.message, "error");
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        reader.onerror = () => {
+          addNotification("Error reading file", "error");
+          setIsLoading(false);
+        };
+        reader.readAsText(file);
+      };
+
+      const handleExport = () => {
+        try {
+          const blob = new Blob([JSON.stringify(story, null, 2)], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "story.json";
+          link.click();
+          URL.revokeObjectURL(url);
+          setStatus("Exported JSON");
+          addNotification("JSON exported successfully", "success");
+        } catch (error) {
+          addNotification("Error exporting JSON: " + error.message, "error");
+        }
+      };
+
+      const handleDragStart = (e, index, nodeId) => {
+        e.dataTransfer.setData("text/plain", JSON.stringify({ nodeId, index }));
+      };
+
+      const handleDrop = (e, dropIndex, nodeId) => {
+        e.preventDefault();
+        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+        if (data.nodeId !== nodeId) return;
+        const choices = [...story[nodeId].choices];
+        const [movedChoice] = choices.splice(data.index, 1);
+        choices.splice(dropIndex, 0, movedChoice);
+        updateNode(nodeId, { ...story[nodeId], choices });
+        setStatus(`Reordered choices in node ${nodeId}`);
+      };
+
+      const filteredNodes = Object.keys(story).filter(
+        (id) =>
+          id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (story[id].text || "").toLowerCase().includes(searchQuery.toLowerCase())
+      );
+
+      return (
+        <div className="flex flex-col w-full h-screen">
+          <div className="tab-bar">
+            <div
+              className={`tab ${activeTab === "nodes" ? "active" : ""}`}
+              onClick={() => setActiveTab("nodes")}
+              role="tab"
+              aria-selected={activeTab === "nodes"}
+            >
+              Nodes
+            </div>
+            <div
+              className={`tab ${activeTab === "tree" ? "active" : ""}`}
+              onClick={() => setActiveTab("tree")}
+              role="tab"
+              aria-selected={activeTab === "tree"}
+            >
+              Tree
+            </div>
+            <div className="flex-grow flex justify-end items-center space-x-4 pr-4">
+              <button
+                className="p-2 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+                onClick={() => fileInputRef.current.click()}
+                aria-label="Import JSON"
+              >
+                Import JSON
+              </button>
+              <input
+                type="file"
+                accept=".json"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleImport}
+              />
+              <button
+                className="p-2 bg-magenta-600 text-white rounded hover:bg-magenta-700"
+                onClick={handleExport}
+                aria-label="Export JSON"
+              >
+                Export JSON
+              </button>
+            </div>
+          </div>
+          {activeTab === "nodes" && (
+            <div className="node-container">
+              <h1 className="text-3xl font-bold neon-text mb-4">Node Management</h1>
+              <input
+                type="text"
+                className="w-full max-w-md p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 mb-4"
+                placeholder="Search nodes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search nodes by ID or text"
+              />
+              <div className="mb-4">
+                <input
+                  id="new-node-input"
+                  type="text"
+                  className="w-full max-w-md p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  placeholder="New node ID"
+                  value={newNodeId}
+                  onChange={(e) => {
+                    setNewNodeId(e.target.value);
+                    setNewNodeError("");
+                  }}
+                  aria-label="Enter new node ID"
+                />
+                {newNodeError && <p className="text-red-400 mt-1">{newNodeError}</p>}
+                <button
+                  className="mt-2 p-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  onClick={addNode}
+                  aria-label="Add new node"
+                >
+                  Add Node
+                </button>
+              </div>
+              {isLoading ? (
+                <p className="text-gray-400">Loading JSON...</p>
+              ) : (
+                filteredNodes.map((nodeId) => (
+                  <NodeEditor
+                    key={nodeId}
+                    nodeId={nodeId}
+                    node={story[nodeId]}
+                    updateNode={updateNode}
+                    deleteNode={deleteNode}
+                    addChoice={addChoice}
+                    story={story}
+                    isActive={activeNode === nodeId}
+                    onDragStart={(e, index) => handleDragStart(e, index, nodeId)}
+                    onDrop={(e, index) => handleDrop(e, index, nodeId)}
+                  />
+                ))
+              )}
+            </div>
+          )}
+          {activeTab === "tree" && (
+            <div className="tree-container">
+              <h1 className="text-3xl font-bold neon-text mb-4">Story Tree</h1>
+              <TreeNetwork
+                story={story}
+                activeNode={activeNode}
+                setActiveNode={setActiveNode}
+                setStatus={setStatus}
+              />
+            </div>
+          )}
+          <div className="status-bar">
+            <p className="text-gray-400">{status}</p>
+          </div>
+          {notifications.map((n) => (
+            <Notification
+              key={n.id}
+              message={n.message}
+              type={n.type}
+              onClose={() => setNotifications((prev) => prev.filter((x) => x.id !== n.id))}
+              onUndo={n.onUndo}
+            />
+          ))}
+        </div>
+      );
+    };
+
+    try {
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      );
+    } catch (error) {
+      console.error("Error rendering app:", error);
+      document.getElementById("root").innerHTML = "<p class='text-red-500'>Error loading editor. Please check console for details.</p>";
+    }
   </script>
 </body>
 </html>
