@@ -54,7 +54,7 @@
       background: linear-gradient(to bottom, #1a1a1a, #2a2a2a);
       color: #e0e0e0;
       margin: 0;
-      overflow: hidden;
+      overflow: auto;
     }
     .neon-text {
       text-shadow: 0 0 5px #00f6ff, 0 0 10px #ff00ff;
@@ -63,12 +63,12 @@
       background: #111;
       border: 2px solid #00f6ff;
       box-shadow: 0 0 15px rgba(0, 246, 255, 0.5);
-      height: calc(100vh - 100px);
+      height: calc(100vh - 120px);
       width: 100%;
     }
     .node-container {
       width: 100%;
-      height: calc(100vh - 100px);
+      height: calc(100vh - 120px);
       overflow-y: auto;
       padding: 16px;
     }
@@ -114,6 +114,8 @@
     }
     button {
       transition: all 0.2s ease-in-out;
+      min-width: 44px;
+      min-height: 44px;
     }
     button:hover {
       box-shadow: 0 0 8px #00f6ff;
@@ -123,7 +125,8 @@
       border-bottom: 2px solid #00f6ff;
       padding: 8px;
       display: flex;
-      gap: 16px;
+      flex-wrap: wrap;
+      gap: 8px;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -133,6 +136,7 @@
       color: #e0e0e0;
       cursor: pointer;
       transition: all 0.2s ease-in-out;
+      font-size: 1rem;
     }
     .tab.active {
       background: #00f6ff;
@@ -149,6 +153,24 @@
     #network {
       width: 100%;
       height: 100%;
+    }
+    @media (max-width: 640px) {
+      .tree-container, .node-container {
+        height: calc(100vh - 160px);
+      }
+      .tab {
+        font-size: 0.875rem;
+        padding: 6px 12px;
+      }
+      input, textarea, select {
+        font-size: 1rem;
+      }
+      .node-editor {
+        padding: 12px;
+      }
+      button {
+        padding: 8px;
+      }
     }
   </style>
 </head>
@@ -239,9 +261,9 @@
               border: id === activeNode ? "#ff00ff" : "#00f6ff",
               highlight: { background: "#1a1a1a", border: "#ff00ff" },
             },
-            font: { color: "#e0e0e0", face: "Courier New", size: 12 },
+            font: { color: "#e0e0e0", face: "Courier New", size: window.innerWidth < 640 ? 10 : 12 },
             margin: 10,
-            widthConstraint: { minimum: 100, maximum: 120 },
+            widthConstraint: { minimum: window.innerWidth < 640 ? 80 : 100, maximum: window.innerWidth < 640 ? 100 : 120 },
           });
           (node.choices || []).forEach((choice, index) => {
             if (choice.next && story[choice.next] && !visited.has(choice.next)) {
@@ -250,7 +272,7 @@
                 to: choice.next,
                 label: choice.text.slice(0, 30) + (choice.text.length > 30 ? "..." : ""),
                 color: { color: "#ff00ff", highlight: "#ff00ff" },
-                font: { color: "#e0e0e0", face: "Courier New", size: 10, align: "middle" },
+                font: { color: "#e0e0e0", face: "Courier New", size: window.innerWidth < 640 ? 8 : 10, align: "middle" },
                 width: 2,
               });
               addNode(choice.next, depth + 1);
@@ -282,9 +304,9 @@
             hierarchical: {
               direction: "UD",
               sortMethod: "directed",
-              levelSeparation: 150,
-              nodeSpacing: 200,
-              treeSpacing: 200,
+              levelSeparation: window.innerWidth < 640 ? 100 : 150,
+              nodeSpacing: window.innerWidth < 640 ? 100 : 200,
+              treeSpacing: window.innerWidth < 640 ? 100 : 200,
             },
           },
           interaction: {
@@ -292,6 +314,8 @@
             zoomView: true,
             dragView: true,
             selectable: true,
+            multiselect: false,
+            zoomSpeed: 0.4,
           },
           physics: { enabled: false },
           edges: {
@@ -319,8 +343,13 @@
           network.canvas.body.container.style.cursor = "default";
         });
 
+        // Prevent default right-click
+        const container = containerRef.current;
+        container.addEventListener("contextmenu", (e) => e.preventDefault());
+
         // Clean up
         return () => {
+          container.removeEventListener("contextmenu", (e) => e.preventDefault());
           network.destroy();
         };
       }, [story, activeNode, setActiveNode]);
@@ -328,34 +357,34 @@
       return (
         <div className="relative">
           <div ref={containerRef} id="network" />
-          <div className="absolute top-2 left-2 flex space-x-2">
+          <div className="absolute top-2 left-2 flex space-x-2 sm:space-x-4">
             <button
-              className="p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+              className="p-2 sm:p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700 text-sm sm:text-base"
               onClick={() => networkRef.current?.zoom(0.1)}
               aria-label="Zoom in"
             >
               Zoom In
             </button>
             <button
-              className="p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+              className="p-2 sm:p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700 text-sm sm:text-base"
               onClick={() => networkRef.current?.zoom(-0.1)}
               aria-label="Zoom out"
             >
               Zoom Out
             </button>
             <button
-              className="p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+              className="p-2 sm:p-1 bg-cyan-600 text-white rounded hover:bg-cyan-700 text-sm sm:text-base"
               onClick={() => networkRef.current?.fit()}
-              aria-label="Reset view"
+              aria-label="Fit to screen"
             >
-              Reset View
+              Fit to Screen
             </button>
           </div>
         </div>
       );
     };
 
-    const NodeEditor = ({ nodeId, node, updateNode, deleteNode, addChoice, story, isActive, onDragStart, onDrop }) => {
+    const NodeEditor = ({ nodeId, node, updateNode, deleteNode, addChoice, story, isActive, onMoveUp, onMoveDown, choiceCount }) => {
       const [isCollapsed, setIsCollapsed] = useState(false);
 
       const handleChange = (field, value) => {
@@ -373,15 +402,17 @@
         updateNode(nodeId, { ...node, choices: newChoices });
       };
 
+      const isMobile = window.innerWidth < 640;
+
       return (
         <div
           id={`node-${nodeId}`}
-          className={`node-editor bg-gray-900 p-4 rounded-lg shadow-lg border ${isActive ? "active" : "border-cyan-500"} animate-fade-in mb-4`}
+          className={`node-editor bg-gray-900 p-4 sm:p-6 rounded-lg shadow-lg border ${isActive ? "active" : "border-cyan-500"} animate-fade-in mb-4`}
         >
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-bold text-cyan-400">{nodeId}</h3>
+            <h3 className="text-lg sm:text-xl font-bold text-cyan-400">{nodeId}</h3>
             <button
-              className="p-1 text-gray-400 hover:text-gray-200"
+              className="p-1 text-gray-400 hover:text-gray-200 text-sm sm:text-base"
               onClick={() => setIsCollapsed(!isCollapsed)}
               aria-label={isCollapsed ? `Expand node ${nodeId}` : `Collapse node ${nodeId}`}
             >
@@ -393,7 +424,7 @@
               <div className="mb-4">
                 <label className="block text-sm text-gray-300">Text</label>
                 <textarea
-                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 text-sm sm:text-base"
                   value={node.text || ""}
                   onChange={(e) => handleChange("text", e.target.value)}
                   aria-label={`Text for node ${nodeId}`}
@@ -403,7 +434,7 @@
                 <label className="block text-sm text-gray-300">Image</label>
                 <input
                   type="text"
-                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 text-sm sm:text-base"
                   value={node.image || ""}
                   onChange={(e) => handleChange("image", e.target.value)}
                   aria-label={`Image path for node ${nodeId}`}
@@ -413,7 +444,7 @@
                 <label className="block text-sm text-gray-300">Alt Text</label>
                 <input
                   type="text"
-                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 text-sm sm:text-base"
                   value={node.alt || ""}
                   onChange={(e) => handleChange("alt", e.target.value)}
                   aria-label={`Alt text for node ${nodeId}`}
@@ -422,7 +453,7 @@
               <div className="mb-4">
                 <label className="block text-sm text-gray-300">Info (Optional)</label>
                 <textarea
-                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 text-sm sm:text-base"
                   value={node.info || ""}
                   onChange={(e) => handleChange("info", e.target.value)}
                   aria-label={`Info for node ${nodeId}`}
@@ -431,7 +462,7 @@
               <div className="mb-4">
                 <label className="block text-sm text-gray-300">Ending (Optional)</label>
                 <textarea
-                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  className="w-full p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 text-sm sm:text-base"
                   value={node.ending || ""}
                   onChange={(e) => handleChange("ending", e.target.value)}
                   aria-label={`Ending for node ${nodeId}`}
@@ -442,22 +473,22 @@
                 {(node.choices || []).map((choice, index) => (
                   <div
                     key={index}
-                    className="flex space-x-2 mb-2 draggable"
-                    draggable
-                    onDragStart={(e) => onDragStart(e, index)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => onDrop(e, index)}
+                    className={`flex space-x-2 mb-2 ${isMobile ? "" : "draggable"}`}
+                    draggable={!isMobile}
+                    onDragStart={isMobile ? null : (e) => onMoveUp(e, index)}
+                    onDragOver={isMobile ? null : (e) => e.preventDefault()}
+                    onDrop={isMobile ? null : (e) => onMoveDown(e, index)}
                   >
                     <input
                       type="text"
-                      className="flex-1 p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                      className="flex-1 p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 text-sm sm:text-base"
                       placeholder="Choice Text"
                       value={choice.text || ""}
                       onChange={(e) => handleChoiceChange(index, "text", e.target.value)}
                       aria-label={`Choice text ${index + 1} for node ${nodeId}`}
                     />
                     <select
-                      className="p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                      className="p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 text-sm sm:text-base"
                       value={choice.next || ""}
                       onChange={(e) => handleChoiceChange(index, "next", e.target.value)}
                       aria-label={`Next node for choice ${index + 1} in node ${nodeId}`}
@@ -467,17 +498,39 @@
                         <option key={id} value={id}>{id}</option>
                       ))}
                     </select>
-                    <button
-                      className="p-2 bg-red-600 text-white rounded hover:bg-red-700"
-                      onClick={() => removeChoice(index)}
-                      aria-label={`Remove choice ${index + 1} from node ${nodeId}`}
-                    >
-                      Remove
-                    </button>
+                    <div className="flex space-x-2">
+                      {isMobile && (
+                        <>
+                          <button
+                            className="p-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs sm:text-sm"
+                            onClick={() => onMoveUp(index)}
+                            disabled={index === 0}
+                            aria-label={`Move choice ${index + 1} up in node ${nodeId}`}
+                          >
+                            ↑
+                          </button>
+                          <button
+                            className="p-2 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs sm:text-sm"
+                            onClick={() => onMoveDown(index)}
+                            disabled={index === choiceCount - 1}
+                            aria-label={`Move choice ${index + 1} down in node ${nodeId}`}
+                          >
+                            ↓
+                          </button>
+                        </>
+                      )}
+                      <button
+                        className="p-2 bg-red-600 text-white rounded hover:bg-red-700 text-xs sm:text-sm"
+                        onClick={() => removeChoice(index)}
+                        aria-label={`Remove choice ${index + 1} from node ${nodeId}`}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <button
-                  className="mt-2 p-2 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+                  className="mt-2 p-2 bg-cyan-600 text-white rounded hover:bg-cyan-700 text-sm sm:text-base"
                   onClick={() => addChoice(nodeId)}
                   aria-label={`Add choice to node ${nodeId}`}
                 >
@@ -485,7 +538,7 @@
                 </button>
               </div>
               <button
-                className="p-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="p-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
                 onClick={() => deleteNode(nodeId)}
                 aria-label={`Delete node ${nodeId}`}
               >
@@ -588,6 +641,24 @@
         setStatus(`Added choice to node ${nodeId}`);
       };
 
+      const moveChoiceUp = (nodeId, index) => {
+        if (index === 0) return;
+        const choices = [...story[nodeId].choices];
+        const [choice] = choices.splice(index, 1);
+        choices.splice(index - 1, 0, choice);
+        updateNode(nodeId, { ...story[nodeId], choices });
+        setStatus(`Moved choice up in node ${nodeId}`);
+      };
+
+      const moveChoiceDown = (nodeId, index) => {
+        const choices = [...story[nodeId].choices];
+        if (index >= choices.length - 1) return;
+        const [choice] = choices.splice(index, 1);
+        choices.splice(index + 1, 0, choice);
+        updateNode(nodeId, { ...story[nodeId], choices });
+        setStatus(`Moved choice down in node ${nodeId}`);
+      };
+
       const handleImport = (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -632,21 +703,6 @@
         }
       };
 
-      const handleDragStart = (e, index, nodeId) => {
-        e.dataTransfer.setData("text/plain", JSON.stringify({ nodeId, index }));
-      };
-
-      const handleDrop = (e, dropIndex, nodeId) => {
-        e.preventDefault();
-        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-        if (data.nodeId !== nodeId) return;
-        const choices = [...story[nodeId].choices];
-        const [movedChoice] = choices.splice(data.index, 1);
-        choices.splice(dropIndex, 0, movedChoice);
-        updateNode(nodeId, { ...story[nodeId], choices });
-        setStatus(`Reordered choices in node ${nodeId}`);
-      };
-
       const filteredNodes = Object.keys(story).filter(
         (id) =>
           id.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -672,9 +728,9 @@
             >
               Tree
             </div>
-            <div className="flex-grow flex justify-end items-center space-x-4 pr-4">
+            <div className="flex-grow flex flex-wrap justify-end items-center space-x-2 sm:space-x-4 pr-4">
               <button
-                className="p-2 bg-cyan-600 text-white rounded hover:bg-cyan-700"
+                className="p-2 bg-cyan-600 text-white rounded hover:bg-cyan-700 text-sm sm:text-base"
                 onClick={() => fileInputRef.current.click()}
                 aria-label="Import JSON"
               >
@@ -688,7 +744,7 @@
                 onChange={handleImport}
               />
               <button
-                className="p-2 bg-magenta-600 text-white rounded hover:bg-magenta-700"
+                className="p-2 bg-magenta-600 text-white rounded hover:bg-cyan-700 text-sm sm:text-base"
                 onClick={handleExport}
                 aria-label="Export JSON"
               >
@@ -698,10 +754,10 @@
           </div>
           {activeTab === "nodes" && (
             <div className="node-container">
-              <h1 className="text-3xl font-bold neon-text mb-4">Node Management</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold neon-text mb-4">Node Management</h1>
               <input
                 type="text"
-                className="w-full max-w-md p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 mb-4"
+                className="w-full max-w-md p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 mb-4 text-sm sm:text-base"
                 placeholder="Search nodes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -711,7 +767,7 @@
                 <input
                   id="new-node-input"
                   type="text"
-                  className="w-full max-w-md p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500"
+                  className="w-full max-w-md p-2 bg-gray-800 text-gray-200 rounded border border-gray-700 focus:border-cyan-500 text-sm sm:text-base"
                   placeholder="New node ID"
                   value={newNodeId}
                   onChange={(e) => {
@@ -720,9 +776,9 @@
                   }}
                   aria-label="Enter new node ID"
                 />
-                {newNodeError && <p className="text-red-400 mt-1">{newNodeError}</p>}
+                {newNodeError && <p className="text-red-400 mt-1 text-sm">{newNodeError}</p>}
                 <button
-                  className="mt-2 p-2 bg-green-600 text-white rounded hover:bg-green-700"
+                  className="mt-2 p-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm sm:text-base"
                   onClick={addNode}
                   aria-label="Add new node"
                 >
@@ -730,7 +786,7 @@
                 </button>
               </div>
               {isLoading ? (
-                <p className="text-gray-400">Loading JSON...</p>
+                <p className="text-gray-400 text-sm sm:text-base">Loading JSON...</p>
               ) : (
                 filteredNodes.map((nodeId) => (
                   <NodeEditor
@@ -742,8 +798,9 @@
                     addChoice={addChoice}
                     story={story}
                     isActive={activeNode === nodeId}
-                    onDragStart={(e, index) => handleDragStart(e, index, nodeId)}
-                    onDrop={(e, index) => handleDrop(e, index, nodeId)}
+                    onMoveUp={(index) => moveChoiceUp(nodeId, index)}
+                    onMoveDown={(index) => moveChoiceDown(nodeId, index)}
+                    choiceCount={story[nodeId].choices?.length || 0}
                   />
                 ))
               )}
@@ -751,7 +808,7 @@
           )}
           {activeTab === "tree" && (
             <div className="tree-container">
-              <h1 className="text-3xl font-bold neon-text mb-4">Story Tree</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold neon-text mb-4">Story Tree</h1>
               <TreeNetwork
                 story={story}
                 activeNode={activeNode}
@@ -761,7 +818,7 @@
             </div>
           )}
           <div className="status-bar">
-            <p className="text-gray-400">{status}</p>
+            <p className="text-gray-400 text-sm sm:text-base">{status}</p>
           </div>
           {notifications.map((n) => (
             <Notification
