@@ -379,7 +379,7 @@
 
     .noir-toggle {
       position: fixed;
-      top: 50px;
+      top: 60px; /* Adjusted to avoid overlap with jukebox */
       left: 10px;
       width: 40px;
       height: 40px;
@@ -414,7 +414,7 @@
 
     .jukebox-control {
       position: fixed;
-      bottom: 50px;
+      bottom: 10px;
       left: 10px;
       display: flex;
       align-items: center;
@@ -679,7 +679,7 @@
     :fullscreen .noir-toggle,
     :-webkit-full-screen .noir-toggle,
     :-moz-full-screen .noir-toggle {
-      top: 50px;
+      top: 60px;
       left: 10px;
       width: 48px;
       height: 48px;
@@ -696,7 +696,7 @@
     :fullscreen .jukebox-control,
     :-webkit-full-screen .jukebox-control,
     :-moz-full-screen .jukebox-control {
-      bottom: 50px;
+      bottom: 10px;
       left: 10px;
     }
 
@@ -791,7 +791,7 @@
       }
 
       .noir-toggle {
-        top: 40px;
+        top: 50px; /* Adjusted for mobile */
         width: 32px;
         height: 32px;
       }
@@ -799,10 +799,6 @@
       .noir-toggle svg {
         width: 20px;
         height: 20px;
-      }
-
-      .jukebox-control {
-        bottom: 40px;
       }
 
       .jukebox-control .jukebox-play-pause {
@@ -917,7 +913,7 @@
       :fullscreen .noir-toggle,
       :-webkit-full-screen .noir-toggle,
       :-moz-full-screen .noir-toggle {
-        top: 40px;
+        top: 50px;
         width: 40px;
         height: 40px;
       }
@@ -1145,18 +1141,17 @@
   </footer>
 
   <script>
-    // Global variables
     let story = {};
     let currentState = localStorage.getItem("currentState") || "start";
     const fallbackImage = "assets/fallback.jpg";
     let lastPlayedEnding = null;
     let hasInteracted = false;
-    let isFirstLoad = true;
-    let isNoirActive = false;
-    let jukeboxTrack = null;
-    let availableTracks = ['track01.mp3'];
+    let isFirstLoad = true; // Flag to track first load
+    let isNoirActive = false; // Flag to track noir filter state
+    let jukeboxTrack = null; // Audio element for jukebox tracks
+    let availableTracks = ['track01.mp3']; // Default track
 
-    // Track user interaction for autoplay
+    // Track user interaction
     document.addEventListener('click', () => {
       hasInteracted = true;
       console.log("User interaction detected, hasInteracted set to true");
@@ -1185,164 +1180,156 @@
     const welcomeModal = document.getElementById("welcome-modal");
     const playButton = document.getElementById("play-button");
 
-    if (playButton) {
-      playButton.focus();
-      playButton.onclick = () => {
-        welcomeModal.style.display = "none";
-        hasInteracted = true;
-        console.log("Play button clicked, starting game");
+    playButton.focus();
+    playButton.onclick = () => {
+      welcomeModal.style.display = "none";
+      hasInteracted = true;
+      console.log("Play button clicked, starting game");
 
-        // Initialize jukebox
-        jukeboxTrack = document.getElementById("jukebox-track");
-        jukeboxTrack.volume = 0.5;
-        if (hasInteracted) {
-          jukeboxTrack.play().catch(err => console.error("Jukebox track play failed:", err));
-        }
-        updateJukeboxControl();
-        checkTracks();
+      // Initialize jukebox
+      jukeboxTrack = document.getElementById("jukebox-track");
+      jukeboxTrack.volume = 0.5;
+      if (hasInteracted) {
+        jukeboxTrack.play().catch(err => console.error("Jukebox track play failed:", err));
+      }
+      updateJukeboxControl();
+      checkTracks(); // Check for additional tracks
 
-        loadStory();
-      };
+      loadStory();
+    };
 
-      playButton.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          playButton.click();
-        }
-      };
-    }
+    playButton.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        playButton.click();
+      }
+    };
 
     // Audio controls (rain)
     const rainAudio = document.getElementById("background-rain");
     rainAudio.volume = 0.3;
     const audioControl = document.getElementById("audio-control");
 
-    if (rainAudio && audioControl) {
-      rainAudio.onerror = () => {
-        console.error("Failed to load rain audio");
-        document.getElementById("narration").textContent += " (Rain audio unavailable)";
-        audioControl.setAttribute("aria-label", "Rain audio unavailable");
-        audioControl.style.cursor = "not-allowed";
-        audioControl.style.opacity = "0.5";
-      };
+    rainAudio.onerror = () => {
+      console.error("Failed to load rain audio");
+      document.getElementById("narration").textContent += " (Rain audio unavailable)";
+      audioControl.setAttribute("aria-label", "Rain audio unavailable");
+      audioControl.style.cursor = "not-allowed";
+      audioControl.style.opacity = "0.5";
+    };
 
-      function updateAudioControl() {
-        const isRainPaused = rainAudio.paused;
-        audioControl.querySelector("span").textContent = isRainPaused ? "▶" : "⏸";
-        audioControl.setAttribute("aria-label", isRainPaused ? "Play rain audio" : "Pause rain audio");
-      }
+    function updateAudioControl() {
+      const isRainPaused = rainAudio.paused;
+      audioControl.querySelector("span").textContent = isRainPaused ? "▶" : "⏸";
+      audioControl.setAttribute("aria-label", isRainPaused ? "Play rain audio" : "Pause rain audio");
+    }
 
-      audioControl.onclick = () => {
-        if (rainAudio.paused) {
-          rainAudio.play().catch(err => console.error("Rain audio play failed:", err));
-        } else {
-          rainAudio.pause();
-        }
-        updateAudioControl();
-        hasInteracted = true;
-      };
-
-      audioControl.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          audioControl.click();
-        }
-      };
-
-      rainAudio.onplay = updateAudioControl;
-      rainAudio.onpause = updateAudioControl;
-
-      if (hasInteracted) {
-        rainAudio.play().catch(() => {
-          console.log("Rain autoplay blocked, waiting for user interaction");
-          updateAudioControl();
-        });
+    audioControl.onclick = () => {
+      if (rainAudio.paused) {
+        rainAudio.play().catch(err => console.error("Rain audio play failed:", err));
       } else {
-        console.log("Waiting for user interaction to play rain audio");
-        document.addEventListener("click", () => {
-          rainAudio.play().catch(() => console.log("Rain still blocked"));
-        }, { once: true });
+        rainAudio.pause();
       }
+      updateAudioControl();
+      hasInteracted = true;
+    };
+
+    audioControl.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        audioControl.click();
+      }
+    };
+
+    rainAudio.onplay = updateAudioControl;
+    rainAudio.onpause = updateAudioControl;
+
+    if (hasInteracted) {
+      rainAudio.play().catch(() => {
+        console.log("Rain autoplay blocked, waiting for user interaction");
+        updateAudioControl();
+      });
+    } else {
+      console.log("Waiting for user interaction to play rain audio");
+      document.addEventListener("click", () => {
+        rainAudio.play().catch(() => console.log("Rain still blocked"));
+      }, { once: true });
     }
 
     // Jukebox controls
     const jukeboxPlayPause = document.getElementById("jukebox-play-pause");
     const jukeboxTrackSelect = document.getElementById("jukebox-track-select");
 
-    if (jukeboxPlayPause && jukeboxTrackSelect) {
-      function updateJukeboxControl() {
-        const isJukeboxPaused = jukeboxTrack.paused || jukeboxTrack.ended;
-        jukeboxPlayPause.querySelector("span").textContent = isJukeboxPaused ? "▶" : "⏸";
-        jukeboxPlayPause.setAttribute("aria-label", isJukeboxPaused ? "Play jukebox track" : "Pause jukebox track");
-      }
-
-      jukeboxPlayPause.onclick = () => {
-        if (jukeboxTrack.paused) {
-          jukeboxTrack.play().catch(err => console.error("Jukebox track play failed:", err));
-        } else {
-          jukeboxTrack.pause();
-        }
-        updateJukeboxControl();
-        hasInteracted = true;
-      };
-
-      jukeboxPlayPause.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          jukeboxPlayPause.click();
-        }
-      };
-
-      jukeboxTrackSelect.onchange = (e) => {
-        const selectedTrack = e.target.value;
-        jukeboxTrack.pause();
-        jukeboxTrack.src = `assets/${selectedTrack}`;
-        jukeboxTrack.load();
-        if (hasInteracted) {
-          jukeboxTrack.play().catch(err => console.error(`Failed to play ${selectedTrack}:`, err));
-        }
-        updateJukeboxControl();
-        hasInteracted = true;
-      };
-
-      jukeboxTrackSelect.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          jukeboxTrackSelect.focus();
-        }
-      };
-
-      jukeboxTrack.onplay = updateJukeboxControl;
-      jukeboxTrack.onpause = updateJukeboxControl;
-      jukeboxTrack.onerror = () => {
-        console.error("Failed to load jukebox track");
-        document.getElementById("narration").textContent += " (Jukebox track unavailable)";
-        jukeboxPlayPause.setAttribute("aria-label", "Jukebox track unavailable");
-        jukeboxPlayPause.style.cursor = "not-allowed";
-        jukeboxPlayPause.style.opacity = "0.5";
-      };
+    function updateJukeboxControl() {
+      const isJukeboxPaused = jukeboxTrack.paused || jukeboxTrack.ended;
+      jukeboxPlayPause.querySelector("span").textContent = isJukeboxPaused ? "▶" : "⏸";
+      jukeboxPlayPause.setAttribute("aria-label", isJukeboxPaused ? "Play jukebox track" : "Pause jukebox track");
     }
+
+    jukeboxPlayPause.onclick = () => {
+      if (jukeboxTrack.paused) {
+        jukeboxTrack.play().catch(err => console.error("Jukebox track play failed:", err));
+      } else {
+        jukeboxTrack.pause();
+      }
+      updateJukeboxControl();
+      hasInteracted = true;
+    };
+
+    jukeboxPlayPause.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        jukeboxPlayPause.click();
+      }
+    };
+
+    jukeboxTrackSelect.onchange = (e) => {
+      const selectedTrack = e.target.value;
+      jukeboxTrack.pause();
+      jukeboxTrack.src = `assets/${selectedTrack}`;
+      jukeboxTrack.load();
+      if (hasInteracted) {
+        jukeboxTrack.play().catch(err => console.error(`Failed to play ${selectedTrack}:`, err));
+      }
+      updateJukeboxControl();
+      hasInteracted = true;
+    };
+
+    jukeboxTrackSelect.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        jukeboxTrackSelect.focus();
+      }
+    };
+
+    jukeboxTrack.onplay = updateJukeboxControl;
+    jukeboxTrack.onpause = updateJukeboxControl;
+    jukeboxTrack.onerror = () => {
+      console.error("Failed to load jukebox track");
+      document.getElementById("narration").textContent += " (Jukebox track unavailable)";
+      jukeboxPlayPause.setAttribute("aria-label", "Jukebox track unavailable");
+      jukeboxPlayPause.style.cursor = "not-allowed";
+      jukeboxPlayPause.style.opacity = "0.5";
+    };
 
     // Noir filter toggle
     const noirToggle = document.getElementById("noir-toggle");
     const panelImage = document.getElementById("panel-image");
 
-    if (noirToggle && panelImage) {
-      noirToggle.onclick = () => {
-        isNoirActive = !isNoirActive;
-        panelImage.classList.toggle("noir-filter", isNoirActive);
-        noirToggle.setAttribute("aria-label", isNoirActive ? "Disable noir filter" : "Enable noir filter");
-        noirToggle.classList.toggle("noir-active", isNoirActive);
-        hasInteracted = true;
-      };
+    noirToggle.onclick = () => {
+      isNoirActive = !isNoirActive;
+      panelImage.classList.toggle("noir-filter", isNoirActive);
+      noirToggle.setAttribute("aria-label", isNoirActive ? "Disable noir filter" : "Enable noir filter");
+      noirToggle.classList.toggle("noir-active", isNoirActive);
+      hasInteracted = true;
+    };
 
-      noirToggle.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          noirToggle.click();
-        }
-      };
-    }
+    noirToggle.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        noirToggle.click();
+      }
+    };
 
     // Info modal handling
     const infoIcon = document.getElementById("info-icon");
@@ -1350,102 +1337,97 @@
     const infoModalContent = document.getElementById("info-modal-content");
     const infoModalClose = document.getElementById("info-modal-close");
 
-    if (infoIcon && infoModal && infoModalContent && infoModalClose) {
-      infoIcon.onclick = () => {
-        const current = story[currentState];
-        infoModalContent.textContent = current && current.info ? current.info : "No additional information available.";
-        infoModal.style.display = "block";
-        infoModalClose.focus();
-        hasInteracted = true;
-      };
+    infoIcon.onclick = () => {
+      const current = story[currentState];
+      infoModalContent.textContent = current.info || "No additional information available.";
+      infoModal.style.display = "block";
+      infoModalClose.focus();
+      hasInteracted = true;
+    };
 
-      infoIcon.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
+    infoIcon.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        infoIcon.click();
+      }
+    };
+
+    infoModalClose.onclick = () => {
+      infoModal.style.display = "none";
+      infoIcon.focus();
+    };
+
+    infoModalClose.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        infoModalClose.click();
+      }
+    };
+
+    // Trap focus in modal
+    infoModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        const focusable = infoModalClose;
+        if (document.activeElement === focusable && !e.shiftKey) {
           e.preventDefault();
-          infoIcon.click();
+          focusable.focus();
         }
-      };
-
-      infoModalClose.onclick = () => {
-        infoModal.style.display = "none";
-        infoIcon.focus();
-      };
-
-      infoModalClose.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          infoModalClose.click();
-        }
-      };
-
-      // Trap focus in modal
-      infoModal.addEventListener('keydown', (e) => {
-        if (e.key === 'Tab') {
-          const focusable = infoModalClose;
-          if (document.activeElement === focusable && !e.shiftKey) {
-            e.preventDefault();
-            focusable.focus();
-          }
-        }
-        if (e.key === 'Escape') {
-          infoModalClose.click();
-        }
-      });
-    }
+      }
+      if (e.key === 'Escape') {
+        infoModalClose.click();
+      }
+    });
 
     // Full-screen functionality
     const fullscreenButton = document.getElementById("fullscreen");
-    if (fullscreenButton) {
-      fullscreenButton.onclick = toggleFullScreen;
+    fullscreenButton.onclick = toggleFullScreen;
 
-      function toggleFullScreen() {
-        const docEl = document.documentElement;
-        const requestFullScreen = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen;
-        if (!requestFullScreen) {
-          console.warn("Fullscreen not supported");
-          fullscreenButton.disabled = true;
-          fullscreenButton.textContent = "Full Screen Unavailable";
-          return;
-        }
-        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
-          requestFullScreen.call(docEl).then(() => {
-            fullscreenButton.textContent = "Exit Full Screen";
-          }).catch(err => console.error("Error entering full-screen mode:", err));
-        } else {
-          const exitFullScreen = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
-          exitFullScreen.call(document).then(() => {
-            fullscreenButton.textContent = "Enter Full Screen";
-          }).catch(err => console.error("Error exiting full-screen mode:", err));
-        }
-        hasInteracted = true;
+    function toggleFullScreen() {
+      const docEl = document.documentElement;
+      const requestFullScreen = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen;
+      if (!requestFullScreen) {
+        console.warn("Fullscreen not supported");
+        fullscreenButton.disabled = true;
+        fullscreenButton.textContent = "Full Screen Unavailable";
+        return;
       }
-
-      ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(event => {
-        document.addEventListener(event, () => {
-          fullscreenButton.textContent = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement
-            ? "Exit Full Screen"
-            : "Enter Full Screen";
-        });
-      });
+      if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
+        requestFullScreen.call(docEl).then(() => {
+          fullscreenButton.textContent = "Exit Full Screen";
+        }).catch(err => console.error("Error entering full-screen mode:", err));
+      } else {
+        const exitFullScreen = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+        exitFullScreen.call(document).then(() => {
+          fullscreenButton.textContent = "Enter Full Screen";
+        }).catch(err => console.error("Error exiting full-screen mode:", err));
+      }
+      hasInteracted = true;
     }
+
+    ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(event => {
+      document.addEventListener(event, () => {
+        fullscreenButton.textContent = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement
+          ? "Exit Full Screen"
+          : "Enter Full Screen";
+      });
+    });
 
     // Load story
     function loadStory(retries = 3) {
       console.log(`Loading story, retries left: ${retries}, currentState: ${currentState}`);
       fetch('assets/story.json', { mode: 'same-origin' })
         .then(response => {
-          console.log(`Fetch response status: ${response.status} ${response.statusText}`);
           if (!response.ok) {
             throw new Error(`Failed to load story.json: ${response.status} ${response.statusText}`);
           }
-          return response.text();
+          return response.json();
         })
-        .then(text => {
-          console.log("Raw story.json content:", text);
-          const data = JSON.parse(text);
-          console.log("Parsed story data:", data);
+        .then(data => {
+          console.log("Story loaded:", data);
           story = data;
+          // Validate story structure
           validateStory(data);
+          // Reset invalid state
           if (!story[currentState]) {
             console.warn(`State ${currentState} not found, resetting to start`);
             currentState = "start";
@@ -1471,17 +1453,13 @@
           if (retries > 0 && !error.message.includes("404") && !error.message.includes("Unexpected token")) {
             setTimeout(() => loadStory(retries - 1), 2000 + Math.random() * 100);
           } else {
-            const narration = document.getElementById("narration");
-            if (narration) narration.textContent = userMessage;
-            const choicesDiv = document.getElementById("choices");
-            if (choicesDiv) {
-              const retryButton = document.createElement("button");
-              retryButton.textContent = "Retry";
-              retryButton.className = "restart";
-              retryButton.setAttribute("aria-label", "Retry loading story");
-              retryButton.onclick = () => loadStory(3);
-              choicesDiv.appendChild(retryButton);
-            }
+            document.getElementById("narration").textContent = userMessage;
+            const retryButton = document.createElement("button");
+            retryButton.textContent = "Retry";
+            retryButton.className = "restart";
+            retryButton.setAttribute("aria-label", "Retry loading story");
+            retryButton.onclick = () => loadStory(3);
+            document.getElementById("choices").appendChild(retryButton);
             story = {
               start: {
                 text: "Error: Story failed to load. You're in Neon City, but the case is cold. Try again?",
@@ -1521,10 +1499,10 @@
             });
           }
         }
+        // Info field is optional, no validation required
       }
     }
 
-    // Render story state
     function render() {
       const panel = document.getElementById("panel");
       const narration = document.getElementById("narration");
@@ -1535,7 +1513,6 @@
       const tweetButton = document.getElementById("tweet");
       const blueskyButton = document.getElementById("bluesky");
       const infoIcon = document.getElementById("info-icon");
-
       if (!panel || !narration || !ending || !choicesDiv || !panelImage || !restartButton || !tweetButton || !blueskyButton || !infoIcon) {
         console.error("Required DOM elements missing:", { panel, narration, ending, choicesDiv, panelImage, restartButton, tweetButton, blueskyButton, infoIcon });
         return;
@@ -1554,19 +1531,18 @@
 
         console.log(`Rendering state: ${currentState}`, current);
 
-        // Hide info modal
-        const infoModal = document.getElementById("info-modal");
-        if (infoModal) infoModal.style.display = "none";
+        // Hide info modal when changing states
+        infoModal.style.display = "none";
 
-        // Toggle info icon disabled state
+        // Toggle info icon disabled state based on info field
         infoIcon.classList.toggle("info-icon-disabled", !current.info);
 
         // Remove previous transition classes
         panel.classList.remove("transition-in", "transition-out");
         narration.classList.remove("transition-in", "glitch");
         choicesDiv.classList.remove("transition-in", "buttons-visible");
-
-        // Reset panel filter
+        
+        // Reset panel filter, preserve noir-filter on image
         panel.style.filter = "none";
         if (!isNoirActive) {
           panelImage.classList.remove("noir-filter");
@@ -1574,13 +1550,14 @@
           panelImage.classList.add("noir-filter");
         }
 
-        // Apply transition out effect
+        // Apply transition out effect only if not first load
         if (!isFirstLoad) {
           panel.classList.add("transition-out");
         }
 
-        // Update content
+        // Update content and apply transition in effect
         setTimeout(() => {
+          // Update content
           narration.textContent = current.text || "No narration available.";
           panelImage.src = current.image || fallbackImage;
           panelImage.alt = current.alt || `Cyber-noir comic scene: ${current.text?.slice(0, 50) || "Unknown"}...`;
@@ -1588,11 +1565,12 @@
           ending.textContent = current.ending || "";
           choicesDiv.innerHTML = "";
 
+          // Reapply noir filter if active
           if (isNoirActive) {
             panelImage.classList.add("noir-filter");
           }
 
-          // Apply transition in effects
+          // Apply transition in effects only if not first load
           if (!isFirstLoad) {
             panel.classList.remove("transition-out");
             panel.classList.add("transition-in");
@@ -1600,7 +1578,7 @@
             choicesDiv.classList.add("transition-in");
           }
 
-          // Clear filter after animation
+          // Clear filter after animation (only if transition was applied, preserve noir-filter)
           setTimeout(() => {
             panel.style.filter = "none";
             if (!isNoirActive) {
@@ -1614,6 +1592,7 @@
           console.log(`Choices for ${currentState}:`, choices);
 
           if (!current.choices || choices.length === 0) {
+            // Treat as an ending
             restartButton.style.display = "inline-block";
             tweetButton.style.display = "inline-block";
             blueskyButton.style.display = "inline-block";
@@ -1635,11 +1614,14 @@
                 console.log("No outcome sound for this ending");
               }
               lastPlayedEnding = currentState;
+            } else {
+              console.log(`Skipping sound: hasInteracted=${hasInteracted}, lastPlayedEnding=${lastPlayedEnding}`);
             }
           } else {
             restartButton.style.display = "none";
             tweetButton.style.display = "none";
             blueskyButton.style.display = "none";
+            // Validate choices
             let validChoices = 0;
             choices.forEach((choice, index) => {
               if (!choice.text || !choice.next) {
@@ -1664,13 +1646,14 @@
             }
           }
 
-          // Show buttons with staggered animation
+          // Show buttons with staggered animation (skip delay on first load)
           setTimeout(() => {
             choicesDiv.classList.add("buttons-visible");
           }, isFirstLoad ? 0 : 800);
 
+          // Set isFirstLoad to false after first render
           isFirstLoad = false;
-        }, isFirstLoad ? 0 : 800);
+        }, isFirstLoad ? 0 : 800); // Skip delay on first load
       } catch (err) {
         console.error("Error in render:", err);
         narration.textContent = "Error: Unable to render story state.";
@@ -1702,6 +1685,8 @@
         }
         lastPlayedEnding = null;
         render();
+      } else {
+        console.log(`No transition needed: currentState=${currentState} equals nextState=${nextState}`);
       }
     }
 
@@ -1829,22 +1814,15 @@
       hasInteracted = true;
     }
 
-    // Attach event listeners for buttons
-    const restartButton = document.getElementById("restart");
-    const tweetButton = document.getElementById("tweet");
-    const blueskyButton = document.getElementById("bluesky");
-
-    if (restartButton) restartButton.onclick = restart;
-    if (tweetButton) tweetButton.onclick = tweetOutcome;
-    if (blueskyButton) {
-      blueskyButton.onclick = postToBluesky;
-      blueskyButton.onkeydown = (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          postToBluesky();
-        }
-      };
-    }
+    document.getElementById("restart").onclick = restart;
+    document.getElementById("tweet").onclick = tweetOutcome;
+    document.getElementById("bluesky").onclick = postToBluesky;
+    document.getElementById("bluesky").onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        postToBluesky();
+      }
+    };
 
     // Reset invalid state on load
     if (!story[currentState]) {
