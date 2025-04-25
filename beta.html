@@ -101,7 +101,7 @@
     }
 
     .panel img.noir-filter {
-      filter: grayscale(100%);
+      filter: grayscale(100%) contrast(150%) brightness(90%);
       animation: none;
     }
 
@@ -851,6 +851,7 @@
     let hasInteracted = false;
     let themeTune = null;
     let isFirstLoad = true; // Flag to track first load
+    let isNoirActive = false; // Flag to track noir filter state
 
     // Track user interaction
     document.addEventListener('click', () => {
@@ -954,8 +955,8 @@
     const panelImage = document.getElementById("panel-image");
 
     noirToggle.onclick = () => {
-      panelImage.classList.toggle("noir-filter");
-      const isNoirActive = panelImage.classList.contains("noir-filter");
+      isNoirActive = !isNoirActive;
+      panelImage.classList.toggle("noir-filter", isNoirActive);
       noirToggle.setAttribute("aria-label", isNoirActive ? "Disable noir filter" : "Enable noir filter");
       noirToggle.classList.toggle("noir-active", isNoirActive);
       hasInteracted = true;
@@ -1122,10 +1123,12 @@
         narration.classList.remove("transition-in", "glitch");
         choicesDiv.classList.remove("transition-in", "buttons-visible");
         
-        // Reset any filters (preserve noir-filter if active)
+        // Reset panel filter, preserve noir-filter on image
         panel.style.filter = "none";
-        if (!panelImage.classList.contains("noir-filter")) {
-          panelImage.style.filter = "none";
+        if (!isNoirActive) {
+          panelImage.classList.remove("noir-filter");
+        } else {
+          panelImage.classList.add("noir-filter");
         }
 
         // Apply transition out effect only if not first load
@@ -1143,6 +1146,11 @@
           ending.textContent = current.ending || "";
           choicesDiv.innerHTML = "";
 
+          // Reapply noir filter if active
+          if (isNoirActive) {
+            panelImage.classList.add("noir-filter");
+          }
+
           // Apply transition in effects only if not first load
           if (!isFirstLoad) {
             panel.classList.remove("transition-out");
@@ -1154,8 +1162,8 @@
           // Clear filter after animation (only if transition was applied, preserve noir-filter)
           setTimeout(() => {
             panel.style.filter = "none";
-            if (!panelImage.classList.contains("noir-filter")) {
-              panelImage.style.filter = "none";
+            if (!isNoirActive) {
+              panelImage.classList.remove("noir-filter");
             }
             panel.classList.remove("transition-in");
           }, isFirstLoad ? 0 : 800);
