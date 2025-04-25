@@ -379,7 +379,7 @@
 
     .noir-toggle {
       position: fixed;
-      top: 60px; /* Adjusted to avoid overlap with jukebox */
+      top: 10px;
       left: 10px;
       width: 40px;
       height: 40px;
@@ -410,60 +410,6 @@
 
     .noir-toggle.noir-active svg {
       fill: #fff;
-    }
-
-    .jukebox-control {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 30;
-    }
-
-    .jukebox-control .jukebox-play-pause {
-      width: 40px;
-      height: 40px;
-      background: rgba(0, 255, 255, 0.2);
-      border: 2px solid #0ff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
-    }
-
-    .jukebox-control .jukebox-play-pause:hover, .jukebox-control .jukebox-play-pause:focus {
-      background: rgba(0, 255, 255, 0.5);
-      transform: scale(1.1);
-      box-shadow: 0 0 10px #0ff;
-      outline: none;
-    }
-
-    .jukebox-control .jukebox-play-pause span {
-      color: #0ff;
-      font-size: 20px;
-      line-height: 1;
-    }
-
-    .jukebox-control select {
-      background: #000;
-      color: #0ff;
-      border: 2px solid #0ff;
-      padding: 5px;
-      font-size: 0.9em;
-      cursor: pointer;
-      transition: all 0.3s;
-      box-shadow: 0 0 5px #0ff;
-    }
-
-    .jukebox-control select:hover, .jukebox-control select:focus {
-      background: #0ff;
-      color: #000;
-      box-shadow: 0 0 10px #0ff;
-      outline: none;
     }
 
     .modal {
@@ -679,7 +625,7 @@
     :fullscreen .noir-toggle,
     :-webkit-full-screen .noir-toggle,
     :-moz-full-screen .noir-toggle {
-      top: 60px;
+      top: 10px;
       left: 10px;
       width: 48px;
       height: 48px;
@@ -691,33 +637,6 @@
     :-moz-full-screen .noir-toggle svg {
       width: 28px;
       height: 28px;
-    }
-
-    :fullscreen .jukebox-control,
-    :-webkit-full-screen .jukebox-control,
-    :-moz-full-screen .jukebox-control {
-      bottom: 10px;
-      left: 10px;
-    }
-
-    :fullscreen .jukebox-control .jukebox-play-pause,
-    :-webkit-full-screen .jukebox-control .jukebox-play-pause,
-    :-moz-full-screen .jukebox-control .jukebox-play-pause {
-      width: 48px;
-      height: 48px;
-    }
-
-    :fullscreen .jukebox-control .jukebox-play-pause span,
-    :-webkit-full-screen .jukebox-control .jukebox-play-pause span,
-    :-moz-full-screen .jukebox-control .jukebox-play-pause span {
-      font-size: 24px;
-    }
-
-    :fullscreen .jukebox-control select,
-    :-webkit-full-screen .jukebox-control select,
-    :-moz-full-screen .jukebox-control select {
-      padding: 8px;
-      font-size: 1em;
     }
 
     @media (max-width: 600px) {
@@ -791,7 +710,6 @@
       }
 
       .noir-toggle {
-        top: 50px; /* Adjusted for mobile */
         width: 32px;
         height: 32px;
       }
@@ -799,20 +717,6 @@
       .noir-toggle svg {
         width: 20px;
         height: 20px;
-      }
-
-      .jukebox-control .jukebox-play-pause {
-        width: 32px;
-        height: 32px;
-      }
-
-      .jukebox-control .jukebox-play-pause span {
-        font-size: 16px;
-      }
-
-      .jukebox-control select {
-        padding: 4px;
-        font-size: 0.8em;
       }
 
       .modal-content {
@@ -913,7 +817,6 @@
       :fullscreen .noir-toggle,
       :-webkit-full-screen .noir-toggle,
       :-moz-full-screen .noir-toggle {
-        top: 50px;
         width: 40px;
         height: 40px;
       }
@@ -923,26 +826,6 @@
       :-moz-full-screen .noir-toggle svg {
         width: 24px;
         height: 24px;
-      }
-
-      :fullscreen .jukebox-control .jukebox-play-pause,
-      :-webkit-full-screen .jukebox-control .jukebox-play-pause,
-      :-moz-full-screen .jukebox-control .jukebox-play-pause {
-        width: 40px;
-        height: 40px;
-      }
-
-      :fullscreen .jukebox-control .jukebox-play-pause span,
-      :-webkit-full-screen .jukebox-control .jukebox-play-pause span,
-      :-moz-full-screen .jukebox-control .jukebox-play-pause span {
-        font-size: 20px;
-      }
-
-      :fullscreen .jukebox-control select,
-      :-webkit-full-screen .jukebox-control select,
-      :-moz-full-screen .jukebox-control select {
-        padding: 6px;
-        font-size: 0.9em;
       }
     }
 
@@ -1107,21 +990,13 @@
       <button class="bluesky" id="bluesky" style="display: none;">Post to Bluesky</button>
       <button class="fullscreen" id="fullscreen">Enter Full Screen</button>
     </div>
-    <div class="audio-control" id="audio-control" role="button" tabindex="0" aria-label="Pause rain audio">
+    <div class="audio-control" id="audio-control" role="button" tabindex="0" aria-label="Pause background audio">
       <span>⏸</span>
     </div>
     <div class="noir-toggle" id="noir-toggle" role="button" tabindex="0" aria-label="Enable noir filter">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
       </svg>
-    </div>
-    <div class="jukebox-control" id="jukebox-control">
-      <div class="jukebox-play-pause" id="jukebox-play-pause" role="button" tabindex="0" aria-label="Play jukebox track">
-        <span>▶</span>
-      </div>
-      <select id="jukebox-track-select" aria-label="Select jukebox track">
-        <option value="track01.mp3">Track 01</option>
-      </select>
     </div>
     <div class="info-modal" id="info-modal" role="dialog" aria-labelledby="info-modal-title" aria-modal="true" tabindex="-1">
       <h2 id="info-modal-title" class="sr-only">Additional Information</h2>
@@ -1133,9 +1008,6 @@
     <source src="assets/rain.mp3" type="audio/mpeg">
     Your browser does not support the audio element. Please use a modern browser to experience the full audio effects.
   </audio>
-  <audio id="jukebox-track" loop>
-    <source src="assets/track01.mp3" type="audio/mpeg">
-  </audio>
   <footer role="contentinfo">
     Copyright © Xservus Limited. Created by mrr3b00t. <a href="https://www.pwndefend.com" target="_blank">www.pwndefend.com</a>
   </footer>
@@ -1146,35 +1018,15 @@
     const fallbackImage = "assets/fallback.jpg";
     let lastPlayedEnding = null;
     let hasInteracted = false;
+    let themeTune = null;
     let isFirstLoad = true; // Flag to track first load
     let isNoirActive = false; // Flag to track noir filter state
-    let jukeboxTrack = null; // Audio element for jukebox tracks
-    let availableTracks = ['track01.mp3']; // Default track
 
     // Track user interaction
     document.addEventListener('click', () => {
       hasInteracted = true;
       console.log("User interaction detected, hasInteracted set to true");
     }, { once: true });
-
-    // Check for additional tracks (track02.mp3 to track10.mp3)
-    async function checkTracks() {
-      for (let i = 2; i <= 10; i++) {
-        const trackName = `track${i.toString().padStart(2, '0')}.mp3`;
-        try {
-          const response = await fetch(`assets/${trackName}`, { method: 'HEAD' });
-          if (response.ok) {
-            availableTracks.push(trackName);
-            const option = document.createElement('option');
-            option.value = trackName;
-            option.textContent = `Track ${i.toString().padStart(2, '0')}`;
-            document.getElementById('jukebox-track-select').appendChild(option);
-          }
-        } catch (err) {
-          console.log(`Track ${trackName} not found:`, err);
-        }
-      }
-    }
 
     // Modal handling
     const welcomeModal = document.getElementById("welcome-modal");
@@ -1186,14 +1038,12 @@
       hasInteracted = true;
       console.log("Play button clicked, starting game");
 
-      // Initialize jukebox
-      jukeboxTrack = document.getElementById("jukebox-track");
-      jukeboxTrack.volume = 0.5;
-      if (hasInteracted) {
-        jukeboxTrack.play().catch(err => console.error("Jukebox track play failed:", err));
-      }
-      updateJukeboxControl();
-      checkTracks(); // Check for additional tracks
+      // Play theme tune once
+      themeTune = new Audio('assets/track01.mp3');
+      themeTune.volume = 0.5;
+      themeTune.onerror = () => console.error("Failed to load theme tune: assets/track01.mp3");
+      themeTune.onended = () => updateAudioControl();
+      themeTune.play().catch(err => console.error("Theme tune play failed:", err));
 
       loadStory();
     };
@@ -1205,30 +1055,43 @@
       }
     };
 
-    // Audio controls (rain)
+    // Audio controls
     const rainAudio = document.getElementById("background-rain");
     rainAudio.volume = 0.3;
     const audioControl = document.getElementById("audio-control");
 
     rainAudio.onerror = () => {
       console.error("Failed to load rain audio");
-      document.getElementById("narration").textContent += " (Rain audio unavailable)";
-      audioControl.setAttribute("aria-label", "Rain audio unavailable");
+      document.getElementById("narration").textContent += " (Audio unavailable)";
+      audioControl.setAttribute("aria-label", "Audio unavailable");
       audioControl.style.cursor = "not-allowed";
       audioControl.style.opacity = "0.5";
     };
 
     function updateAudioControl() {
       const isRainPaused = rainAudio.paused;
-      audioControl.querySelector("span").textContent = isRainPaused ? "▶" : "⏸";
-      audioControl.setAttribute("aria-label", isRainPaused ? "Play rain audio" : "Pause rain audio");
+      const isThemePaused = !themeTune || themeTune.paused || themeTune.ended;
+      const isPaused = isRainPaused && isThemePaused;
+      audioControl.querySelector("span").textContent = isPaused ? "▶" : "⏸";
+      audioControl.setAttribute("aria-label", isPaused ? "Play background audio" : "Pause background audio");
     }
 
     audioControl.onclick = () => {
-      if (rainAudio.paused) {
+      const isRainPaused = rainAudio.paused;
+      const isThemePaused = !themeTune || themeTune.paused || themeTune.ended;
+
+      if (isRainPaused && isThemePaused) {
         rainAudio.play().catch(err => console.error("Rain audio play failed:", err));
+        if (themeTune && !themeTune.ended) {
+          themeTune.play().catch(err => console.error("Theme tune play failed:", err));
+        }
       } else {
-        rainAudio.pause();
+        if (!isRainPaused) {
+          rainAudio.pause();
+        }
+        if (themeTune && !themeTune.paused && !themeTune.ended) {
+          themeTune.pause();
+        }
       }
       updateAudioControl();
       hasInteracted = true;
@@ -1246,71 +1109,15 @@
 
     if (hasInteracted) {
       rainAudio.play().catch(() => {
-        console.log("Rain autoplay blocked, waiting for user interaction");
+        console.log("Autoplay blocked, waiting for user interaction");
         updateAudioControl();
       });
     } else {
-      console.log("Waiting for user interaction to play rain audio");
+      console.log("Waiting for user interaction to play audio");
       document.addEventListener("click", () => {
-        rainAudio.play().catch(() => console.log("Rain still blocked"));
+        rainAudio.play().catch(() => console.log("Still blocked"));
       }, { once: true });
     }
-
-    // Jukebox controls
-    const jukeboxPlayPause = document.getElementById("jukebox-play-pause");
-    const jukeboxTrackSelect = document.getElementById("jukebox-track-select");
-
-    function updateJukeboxControl() {
-      const isJukeboxPaused = jukeboxTrack.paused || jukeboxTrack.ended;
-      jukeboxPlayPause.querySelector("span").textContent = isJukeboxPaused ? "▶" : "⏸";
-      jukeboxPlayPause.setAttribute("aria-label", isJukeboxPaused ? "Play jukebox track" : "Pause jukebox track");
-    }
-
-    jukeboxPlayPause.onclick = () => {
-      if (jukeboxTrack.paused) {
-        jukeboxTrack.play().catch(err => console.error("Jukebox track play failed:", err));
-      } else {
-        jukeboxTrack.pause();
-      }
-      updateJukeboxControl();
-      hasInteracted = true;
-    };
-
-    jukeboxPlayPause.onkeydown = (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        jukeboxPlayPause.click();
-      }
-    };
-
-    jukeboxTrackSelect.onchange = (e) => {
-      const selectedTrack = e.target.value;
-      jukeboxTrack.pause();
-      jukeboxTrack.src = `assets/${selectedTrack}`;
-      jukeboxTrack.load();
-      if (hasInteracted) {
-        jukeboxTrack.play().catch(err => console.error(`Failed to play ${selectedTrack}:`, err));
-      }
-      updateJukeboxControl();
-      hasInteracted = true;
-    };
-
-    jukeboxTrackSelect.onkeydown = (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        jukeboxTrackSelect.focus();
-      }
-    };
-
-    jukeboxTrack.onplay = updateJukeboxControl;
-    jukeboxTrack.onpause = updateJukeboxControl;
-    jukeboxTrack.onerror = () => {
-      console.error("Failed to load jukebox track");
-      document.getElementById("narration").textContent += " (Jukebox track unavailable)";
-      jukeboxPlayPause.setAttribute("aria-label", "Jukebox track unavailable");
-      jukeboxPlayPause.style.cursor = "not-allowed";
-      jukeboxPlayPause.style.opacity = "0.5";
-    };
 
     // Noir filter toggle
     const noirToggle = document.getElementById("noir-toggle");
