@@ -219,6 +219,74 @@
       line-height: 1;
     }
 
+    /* Modal styles */
+    .modal {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: #111;
+      border: 2px solid #0ff;
+      box-shadow: 0 0 20px #0ff;
+      padding: 20px;
+      max-width: 500px;
+      text-align: center;
+      border-radius: 5px;
+    }
+
+    .modal-logo {
+      max-width: 200px;
+      display: block;
+      margin: 0 auto 20px;
+      filter: brightness(1.2);
+      box-shadow: 0 0 10px #0ff;
+    }
+
+    .modal-content p {
+      font-size: 1.2em;
+      margin-bottom: 20px;
+    }
+
+    .modal-content a {
+      color: #0ff;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    .modal-content a:hover, .modal-content a:focus {
+      text-shadow: 0 0 10px #0ff;
+      color: #fff;
+    }
+
+    .modal-content button {
+      background: #000;
+      color: #0ff;
+      border: 2px solid #0ff;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 1em;
+      text-transform: uppercase;
+      transition: all 0.3s;
+      box-shadow: 0 0 10px #0ff;
+    }
+
+    .modal-content button:hover, .modal-content button:focus {
+      background: #0ff;
+      color: #000;
+      box-shadow: 0 0 20px #0ff;
+      outline: 3px solid #0ff;
+      outline-offset: 2px;
+    }
+
     footer {
       text-align: center;
       padding: 20px;
@@ -349,6 +417,24 @@
         font-size: 16px;
       }
 
+      .modal-content {
+        max-width: 90%;
+        padding: 15px;
+      }
+
+      .modal-logo {
+        max-width: 150px;
+      }
+
+      .modal-content p {
+        font-size: 1em;
+      }
+
+      .modal-content button {
+        padding: 8px 16px;
+        font-size: 0.9em;
+      }
+
       footer {
         font-size: 0.8em;
         padding: 10px;
@@ -385,6 +471,14 @@
   </style>
 </head>
 <body>
+  <div class="modal" id="welcome-modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+    <div class="modal-content">
+      <h2 id="modal-title" style="display: none;">Welcome to Cyber Noir</h2>
+      <img src="assets/pwndefend.png" alt="PwnDefend Logo" class="modal-logo">
+      <p>Welcome to Cyber Noire! This is a mini choose your own adventure cyber detective game created by <a href="https://www.pwndefend.com" target="_blank">https://www.pwndefend.com</a></p>
+      <button id="play-button" tabindex="0">PLAY</button>
+    </div>
+  </div>
   <div class="comic-container">
     <div class="panel" id="panel">
       <img src="assets/panel1.jpg" alt="Comic panel" id="panel-image">
@@ -420,6 +514,25 @@
       console.log("User interaction detected, hasInteracted set to true");
     }, { once: true });
 
+    // Modal handling
+    const welcomeModal = document.getElementById("welcome-modal");
+    const playButton = document.getElementById("play-button");
+
+    playButton.focus();
+    playButton.onclick = () => {
+      welcomeModal.style.display = "none";
+      hasInteracted = true;
+      console.log("Play button clicked, starting game");
+      loadStory();
+    };
+
+    playButton.onkeydown = (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        playButton.click();
+      }
+    };
+
     // Audio controls
     const rainAudio = document.getElementById("background-rain");
     rainAudio.volume = 0.3;
@@ -439,7 +552,7 @@
       sound.volume = 0.5;
       sound.onerror = () => console.error("Failed to load choice sound");
       sound.play().catch(err => console.error("Choice sound play failed:", err));
-      hasInteracted = true; // Choice click counts as interaction
+      hasInteracted = true;
     }
 
     function playOutcomeSound(type) {
@@ -506,7 +619,7 @@
         rainAudio.pause();
       }
       updateAudioControl();
-      hasInteracted = true; // Audio control click counts as interaction
+      hasInteracted = true;
     };
 
     audioControl.onkeydown = (e) => {
@@ -552,7 +665,7 @@
           fullscreenButton.textContent = "Enter Full Screen";
         }).catch(err => console.error("Error exiting full-screen mode:", err));
       }
-      hasInteracted = true; // Full-screen toggle counts as interaction
+      hasInteracted = true;
     }
 
     ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange'].forEach(event => {
@@ -664,7 +777,6 @@
       if (current.choices?.length === 0) {
         restartButton.style.display = "block";
         tweetButton.style.display = "block";
-        // Play outcome sound for success, partial success, or failure endings
         const successEndings = ["lessons_internal_report", "lessons_external_report", "lessons_internal_warn", "lessons_external_warn"];
         const partialSuccessEndings = ["lessons_internal_expose", "lessons_external_expose", "lessons_internal_audit"];
         const failureEndings = ["fail_internal_lost", "fail_internal_wipe", "fail_internal_disgraced", "fail_external_missed", "fail_external_alienated", "fail_external_disgraced"];
@@ -730,7 +842,7 @@
         console.warn("localStorage unavailable:", e);
       }
       lastPlayedEnding = null;
-      hasInteracted = true; // Restart counts as interaction
+      hasInteracted = true;
       render();
     }
 
@@ -756,13 +868,11 @@
 
       const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(message)}`;
       window.open(tweetUrl, '_blank');
-      hasInteracted = true; // Tweet counts as interaction
+      hasInteracted = true;
     }
 
     document.getElementById("restart").onclick = restart;
     document.getElementById("tweet").onclick = tweetOutcome;
-
-    loadStory();
   </script>
 </body>
 </html>
