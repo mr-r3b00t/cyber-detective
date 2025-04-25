@@ -362,10 +362,6 @@
     <source src="assets/rain.mp3" type="audio/mpeg">
     Your browser does not support the audio element.
   </audio>
-  <audio id="choice-sound">
-    <source src="assets/choice-click.mp3" type="audio/mpeg">
-    Your browser does not support the audio element.
-  </audio>
   <footer>
     Copyright © Xservus Limited. Created by mrr3b00t. <a href="https://www.pwndefend.com" target="_blank">www.pwndefend.com</a>
   </footer>
@@ -379,8 +375,6 @@
     const rainAudio = document.getElementById("background-rain");
     rainAudio.volume = 0.3;
     const audioControl = document.getElementById("audio-control");
-    const choiceSound = new Audio('assets/choice-click.mp3');
-    choiceSound.volume = 0.5;
 
     rainAudio.onerror = () => {
       console.error("Failed to load rain audio");
@@ -390,9 +384,12 @@
       audioControl.style.opacity = "0.5";
     };
 
-    choiceSound.onerror = () => {
-      console.error("Failed to load choice sound");
-    };
+    function playChoiceSound() {
+      const sound = new Audio('assets/choice-click.mp3');
+      sound.volume = 0.5;
+      sound.onerror = () => console.error("Failed to load choice sound");
+      sound.play().catch(err => console.error("Choice sound play failed:", err));
+    }
 
     function updateAudioControl() {
       audioControl.querySelector("span").textContent = rainAudio.paused ? "▶" : "⏸";
@@ -585,8 +582,8 @@
     function makeChoice(nextState) {
       if (currentState !== nextState) {
         console.log(`Transitioning from ${currentState} to ${nextState}`);
-        // Play choice sound
-        choiceSound.play().catch(err => console.error("Choice sound play failed:", err));
+        // Play choice sound (new instance for overlap)
+        playChoiceSound();
         currentState = nextState;
         try {
           localStorage.setItem("currentState", currentState);
