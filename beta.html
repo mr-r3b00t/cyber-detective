@@ -192,15 +192,19 @@
       padding: 20px;
       max-width: 500px;
       width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
       z-index: 1000;
       color: #fff;
       text-align: center;
       border-radius: 5px;
+      box-sizing: border-box;
     }
 
     .info-modal-content {
       font-size: 1.1em;
       margin-bottom: 20px;
+      overflow-y: visible;
     }
 
     .info-modal-close {
@@ -660,11 +664,14 @@
 
       .info-modal {
         max-width: 80%;
+        max-height: 80vh;
         padding: 15px;
+        overflow-y: auto;
       }
 
       .info-modal-content {
         font-size: 1em;
+        overflow-y: visible;
       }
 
       .info-modal-close {
@@ -995,7 +1002,7 @@
     </div>
     <div class="noir-toggle" id="noir-toggle" role="button" tabindex="0" aria-label="Enable noir filter">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-13h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8163-8 8zm-1-13h2v2h-2V7zm0 4h2v2h-2v-2zm0 4h2v2h-2v-2z"/>
       </svg>
     </div>
     <div class="info-modal" id="info-modal" role="dialog" aria-labelledby="info-modal-title" aria-modal="true" tabindex="-1">
@@ -1011,6 +1018,47 @@
   <footer role="contentinfo">
     Copyright © Xservus Limited. Created by mrr3b00t. <a href="https://www.pwndefend.com" target="_blank">www.pwndefend.com</a>
   </footer>
+
+  <script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+  </script>
 
   <script>
     let story = {};
